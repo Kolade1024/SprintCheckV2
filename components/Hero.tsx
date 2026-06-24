@@ -29,7 +29,7 @@ function FloatingStat({
 
 export default function Hero() {
   return (
-    <section className="relative overflow-hidden ">
+    <section className="relative overflow-hidden mt-[5rem] md:mt-[1rem] ">
       {/* Background radial glows over white */}
       <div
         aria-hidden="true"
