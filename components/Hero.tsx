@@ -44,24 +44,24 @@ export default function Hero() {
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
           {/* Left column */}
           <div className="flex flex-col items-start gap-6">
-            <span className="inline-flex items-center gap-2 rounded-pill border border-line bg-white/60 px-[13.33px] py-[5.33px] shadow-glass backdrop-blur-sm">
+            <span className="inline-flex animate-fade-up items-center gap-2 rounded-pill border border-line bg-white/60 px-[13.33px] py-[5.33px] shadow-glass backdrop-blur-sm [animation-delay:60ms] motion-reduce:animate-none">
               <Sparkles className="h-3.5 w-3.5 text-brand-accent" />
               <span className="text-stat-label font-medium text-body">
                 Trusted identity infrastructure for Africa
               </span>
             </span>
 
-            <h1 className="text-balance text-[44px] font-extrabold leading-[1.05] tracking-[-1.5px] text-ink sm:text-[56px] lg:text-h1">
+            <h1 className="animate-fade-up text-balance text-[44px] font-extrabold leading-[1.05] tracking-[-1.5px] text-ink [animation-delay:160ms] motion-reduce:animate-none sm:text-[56px] lg:text-h1">
               Verify identity &amp; customer data in{" "}
               <span className="text-gradient">seconds</span>
             </h1>
 
-            <p className="max-w-[576px] text-lead text-body">
+            <p className="max-w-[576px] animate-fade-up text-lead text-body [animation-delay:260ms] motion-reduce:animate-none">
               Secure identity verification, BVN validation, NIN checks, KYC
               compliance, and fraud prevention for modern businesses.
             </p>
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex animate-fade-up flex-wrap items-center gap-3 [animation-delay:360ms] motion-reduce:animate-none">
               <a
                 href="/sandbox"
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-btn bg-brand px-6 text-base font-medium text-offwhite shadow-glow transition-transform hover:-translate-y-px"
@@ -77,7 +77,7 @@ export default function Hero() {
               </a>
             </div>
 
-            <ul className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2">
+            <ul className="flex animate-fade-up flex-wrap items-center gap-x-6 gap-y-2 pt-2 [animation-delay:460ms] motion-reduce:animate-none">
               {TRUST_ITEMS.map((item) => (
                 <li key={item} className="flex items-center gap-1.5">
                   <CheckCircle className="h-4 w-4 text-brand-accent" />
@@ -94,7 +94,7 @@ export default function Hero() {
               aria-hidden="true"
               className="absolute -inset-6 -z-10 rounded-[32px] bg-brand opacity-20 blur-3xl"
             />
-            <div className="rounded-hero border border-white/60 bg-white/70 p-[13.33px] shadow-glass backdrop-blur-md">
+            <div className="animate-fade-up rounded-hero border border-white/60 bg-white/70 p-[13.33px] shadow-glass backdrop-blur-md [animation-delay:300ms] motion-reduce:animate-none">
               <Image
                 src="/hero-dashboard.png"
                 alt="SprintCheck verification dashboard preview"

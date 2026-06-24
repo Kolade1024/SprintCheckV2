@@ -18,10 +18,10 @@ export default function Navbar() {
   return (
     <header className="fixed w-full top-0 z-50 pt-3 bg-transparent">
       <div className="container-x">
-        <nav className="rounded-panel border border-white/60 bg-white/70 px-[21.33px] py-[13.33px] shadow-glass backdrop-blur-md">
+        <nav className="animate-fade-down rounded-panel border border-white/60 bg-white/70 px-[21.33px] py-[13.33px] shadow-glass backdrop-blur-md motion-reduce:animate-none">
           <div className="flex items-center justify-between gap-4">
             {/* Logo */}
-            <a href="#" className="flex items-center" aria-label="SprintCheck home">
+            <a href="/" className="flex items-center" aria-label="SprintCheck home">
               <Image
                 src="/logo-sprintcheck.png"
                 alt="SprintCheck"
