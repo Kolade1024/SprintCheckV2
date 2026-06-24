@@ -35,4 +35,13 @@
   .eyebrow {
     @apply text-eyebrow font-semibold uppercase text-brand-accent;
   }
+
+  /* Allow horizontal scrolling without showing the scrollbar (code windows). */
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE & old Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Edge */
+  }
 }

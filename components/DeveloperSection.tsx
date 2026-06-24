@@ -47,7 +47,7 @@ function CodeWindow() {
         </div>
 
         {/* Code body */}
-        <pre className="overflow-x-auto px-6 py-6 font-mono text-[13px] leading-[1.7] text-code-text">
+        <pre className="no-scrollbar overflow-x-auto px-6 py-6 font-mono text-[13px] leading-[1.7] text-code-text">
           <code>
             <C>{"// Verify a Bank Verification Number"}</C>
             {"\n"}
