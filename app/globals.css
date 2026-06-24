@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-surface text-body font-sans;
+  }
+}
+
+@layer components {
+  /* Centred content column. At desktop (>=1024px) the 1248px content sits
+     inside the 1440px frame with ~96px gutters; padding shrinks on smaller
+     viewports for tablet/mobile. */
+  .container-x {
+    @apply mx-auto w-full max-w-container px-5 md:px-12 lg:px-24;
+  }
+
+  /* Trailing-word accent used across section headings ("seconds", "one API",
+     "under a second", "questions" ...) — purple→indigo gradient text. */
+  .text-gradient {
+    @apply bg-brand-text bg-clip-text text-transparent;
+  }
+
+  .eyebrow {
+    @apply text-eyebrow font-semibold uppercase text-brand-accent;
+  }
+}
