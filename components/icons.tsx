@@ -5,7 +5,7 @@ import type { SVGProps } from "react";
  * vector component instances used throughout the SprintCheck design.
  * Stroke-based, 2px weight, round caps — the convention used in the file.
  */
-type IconProps = SVGProps<SVGSVGElement>;
+export type IconProps = SVGProps<SVGSVGElement>;
 
 function Base({ children, ...props }: IconProps & { children: React.ReactNode }) {
   return (
@@ -324,4 +324,334 @@ export const Zap = (p: IconProps) => (
   <Base {...p}>
     <path d="M13 2 4 14h7l-1 8 9-12h-7z" />
   </Base>
+);
+
+export const Mail = (p: IconProps) => (
+  <Base {...p}>
+    <rect x="2" y="4" width="20" height="16" rx="2" />
+    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+  </Base>
+);
+
+export const ArrowLeft = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M19 12H5M11 18l-6-6 6-6" />
+  </Base>
+);
+
+export const User = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </Base>
+);
+
+export const Briefcase = (p: IconProps) => (
+  <Base {...p}>
+    <rect x="2" y="7" width="20" height="14" rx="2" />
+    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+  </Base>
+);
+
+export const Phone = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z" />
+  </Base>
+);
+
+export const LayoutGrid = (p: IconProps) => (
+  <Base {...p}>
+    <rect x="3" y="3" width="7" height="7" rx="1.5" />
+    <rect x="14" y="3" width="7" height="7" rx="1.5" />
+    <rect x="14" y="14" width="7" height="7" rx="1.5" />
+    <rect x="3" y="14" width="7" height="7" rx="1.5" />
+  </Base>
+);
+
+export const History = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+    <path d="M3 3v5h5" />
+    <path d="M12 7v5l4 2" />
+  </Base>
+);
+
+export const Clock = (p: IconProps) => (
+  <Base {...p}>
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 6v6l4 2" />
+  </Base>
+);
+
+export const Receipt = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M4 2v20l1.5-1 1.5 1 1.5-1 1.5 1 1.5-1 1.5 1 1.5-1 1.5 1V2l-1.5 1-1.5-1-1.5 1-1.5-1-1.5 1-1.5-1L5.5 3 4 2Z" />
+    <path d="M8 7h8M8 11h8M8 15h5" />
+  </Base>
+);
+
+export const CodeBrackets = (p: IconProps) => (
+  <Base {...p}>
+    <path d="m16 18 6-6-6-6" />
+    <path d="m8 6-6 6 6 6" />
+  </Base>
+);
+
+export const Tag = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M12.59 2.59A2 2 0 0 0 11.17 2H4a2 2 0 0 0-2 2v7.17a2 2 0 0 0 .59 1.41l8.7 8.7a2.43 2.43 0 0 0 3.42 0l6.58-6.58a2.43 2.43 0 0 0 0-3.42z" />
+    <circle cx="7.5" cy="7.5" r=".75" fill="currentColor" />
+  </Base>
+);
+
+export const LogOut = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+    <path d="m16 17 5-5-5-5" />
+    <path d="M21 12H9" />
+  </Base>
+);
+
+export const Search = (p: IconProps) => (
+  <Base {...p}>
+    <circle cx="11" cy="11" r="8" />
+    <path d="m21 21-4.3-4.3" />
+  </Base>
+);
+
+export const Bell = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+    <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+  </Base>
+);
+
+export const Wallet = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
+    <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
+    <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
+  </Base>
+);
+
+export const Pulse = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+  </Base>
+);
+
+export const XCircle = (p: IconProps) => (
+  <Base {...p}>
+    <circle cx="12" cy="12" r="10" />
+    <path d="m15 9-6 6M9 9l6 6" />
+  </Base>
+);
+
+export const ArrowUpRight = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M7 17 17 7M7 7h10v10" />
+  </Base>
+);
+
+export const ArrowDownRight = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M7 7l10 10M17 7v10H7" />
+  </Base>
+);
+
+export const ArrowDownLeft = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M17 7 7 17M17 17H7V7" />
+  </Base>
+);
+
+export const TrendingDown = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M16 17h6v-6" />
+    <path d="m22 17-8.5-8.5-5 5L2 7" />
+  </Base>
+);
+
+export const Filter = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z" />
+  </Base>
+);
+
+export const ExternalLink = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M15 3h6v6" />
+    <path d="M10 14 21 3" />
+    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+  </Base>
+);
+
+export const RefreshCw = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+    <path d="M21 3v5h-5" />
+    <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+    <path d="M3 21v-5h5" />
+  </Base>
+);
+
+export const FingerScan = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M2 12a10 10 0 0 1 18-6" />
+    <path d="M5 18c.6-1.6 1-3.4 1-6a6 6 0 0 1 .5-2.4" />
+    <path d="M9 7a6 6 0 0 1 9 5v2" />
+    <path d="M12 11a2 2 0 0 0-2 2c0 1-.1 2.5-.3 4" />
+    <path d="M14 13c0 2.4 0 6.4-1 9" />
+    <path d="M8.7 22c.2-.66.4-1.3.5-2" />
+  </Base>
+);
+
+export const CreditCard = (p: IconProps) => (
+  <Base {...p}>
+    <rect x="2" y="5" width="20" height="14" rx="2" />
+    <path d="M2 10h20" />
+  </Base>
+);
+
+export const FaceId = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+    <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+    <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+    <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+    <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+    <path d="M9 9h.01M15 9h.01" />
+  </Base>
+);
+
+export const Car = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18.4 10l-1.6-3.5c-.3-.7-1-1.2-1.8-1.2H9c-.8 0-1.5.5-1.8 1.2L5.6 10l-2.1.2C2.7 10.3 2 11.1 2 12v4c0 .6.4 1 1 1h2" />
+    <circle cx="7" cy="17" r="2" />
+    <path d="M9 17h6" />
+    <circle cx="17" cy="17" r="2" />
+  </Base>
+);
+
+export const ClipboardList = (p: IconProps) => (
+  <Base {...p}>
+    <rect x="8" y="2" width="8" height="4" rx="1" />
+    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+    <path d="M12 11h4M12 16h4M8 11h.01M8 16h.01" />
+  </Base>
+);
+
+export const Camera = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z" />
+    <circle cx="12" cy="13" r="3" />
+  </Base>
+);
+
+export const Trash = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+    <path d="M10 11v6M14 11v6" />
+  </Base>
+);
+
+export const Headset = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M3 14h3a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h3" />
+    <path d="M19 19v1a3 3 0 0 1-3 3h-4" />
+  </Base>
+);
+
+export const Building2 = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18" />
+    <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" />
+    <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2" />
+    <path d="M10 6h4M10 10h4M10 14h4M10 18h4" />
+  </Base>
+);
+
+export const Key = (p: IconProps) => (
+  <Base {...p}>
+    <circle cx="7.5" cy="15.5" r="5.5" />
+    <path d="m21 2-9.6 9.6" />
+    <path d="m15.5 7.5 3 3L22 7l-3-3" />
+  </Base>
+);
+
+export const AlertTriangle = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+    <path d="M12 9v4M12 17h.01" />
+  </Base>
+);
+
+export const MessageSquare = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z" />
+  </Base>
+);
+
+export const Save = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" />
+    <path d="M17 21v-8H7v8M7 3v5h8" />
+  </Base>
+);
+
+export const ChevronRight = (p: IconProps) => (
+  <Base {...p}>
+    <path d="m9 18 6-6-6-6" />
+  </Base>
+);
+
+export const ChevronLeft = (p: IconProps) => (
+  <Base {...p}>
+    <path d="m15 18-6-6 6-6" />
+  </Base>
+);
+
+export const TrendingUp = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M16 7h6v6" />
+    <path d="m22 7-8.5 8.5-5-5L2 17" />
+  </Base>
+);
+
+export const Globe = (p: IconProps) => (
+  <Base {...p}>
+    <circle cx="12" cy="12" r="10" />
+    <path d="M2 12h20" />
+    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z" />
+  </Base>
+);
+
+export const Calendar = (p: IconProps) => (
+  <Base {...p}>
+    <rect x="3" y="4" width="18" height="18" rx="2" />
+    <path d="M16 2v4M8 2v4M3 10h18" />
+  </Base>
+);
+
+export const Eye = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+    <circle cx="12" cy="12" r="3" />
+  </Base>
+);
+
+export const EyeOff = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M10.7 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a18 18 0 0 1-2.6 3.6M6.6 6.6A18 18 0 0 0 2 12s3.5 7 10 7a10.4 10.4 0 0 0 5.4-1.5" />
+    <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2M2 2l20 20" />
+  </Base>
+);
+
+export const Google = (p: IconProps) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" {...p}>
+    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.76h3.56c2.08-1.92 3.28-4.74 3.28-8.09Z" fill="#4285F4" />
+    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.56-2.76c-.98.66-2.24 1.06-3.72 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z" fill="#34A853" />
+    <path d="M5.84 14.11a6.6 6.6 0 0 1 0-4.22V7.05H2.18a11 11 0 0 0 0 9.9l3.66-2.84Z" fill="#FBBC05" />
+    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.05l3.66 2.84c.87-2.6 3.3-4.51 6.16-4.51Z" fill="#EA4335" />
+  </svg>
 );

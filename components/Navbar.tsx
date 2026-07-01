@@ -49,7 +49,7 @@ export default function Navbar() {
             {/* Desktop actions */}
             <div className="hidden items-center gap-2 lg:flex">
               <a
-                href="#"
+                href="/signin"
                 className="flex h-9 items-center justify-center rounded-btn px-4 text-small font-medium text-ink transition-colors hover:bg-black/5"
               >
                 Sign in
@@ -97,7 +97,7 @@ export default function Navbar() {
               </ul>
               <div className="mt-3 flex flex-col gap-2 border-t border-line pt-4">
                 <a
-                  href="#"
+                  href="/signin"
                   className="flex h-11 items-center justify-center rounded-btn border border-line text-small font-medium text-ink"
                 >
                   Sign in
