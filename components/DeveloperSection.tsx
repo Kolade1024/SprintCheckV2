@@ -110,13 +110,13 @@ export default function DeveloperSection() {
 
           <div className="flex flex-wrap gap-3 pt-2">
             <a
-              href="#"
+              href="/docs"
               className="inline-flex h-9 items-center justify-center rounded-btn bg-brand px-4 text-small font-medium text-offwhite shadow-glow transition-transform hover:-translate-y-px"
             >
               Read the docs
             </a>
             <a
-              href="#"
+              href="/signup"
               className="inline-flex h-9 items-center justify-center rounded-btn border border-line bg-white px-4 text-small font-medium text-ink shadow-btn transition-colors hover:bg-subtle"
             >
               Get API keys

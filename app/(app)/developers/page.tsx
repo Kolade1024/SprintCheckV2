@@ -194,7 +194,7 @@ export default function DevelopersPage() {
         </div>
 
         <a
-          href="/sandbox"
+          href="/docs"
           className="inline-flex items-center gap-1.5 text-base font-medium text-brand-accent transition-colors hover:text-brand"
         >
           Visit Documentation Page

@@ -5,6 +5,26 @@
 @layer base {
   :root {
     color-scheme: light;
+
+    /* Themeable neutrals (RGB triplets consumed by tailwind.config.ts).
+       Light values are identical to the original hex tokens. */
+    --sc-ink: 11 16 35; /* #0b1023 */
+    --sc-body: 91 99 117; /* #5b6375 */
+    --sc-surface: 255 255 255; /* #ffffff */
+    --sc-subtle: 246 247 254; /* #f6f7fe */
+    --sc-line: 228 232 239; /* #e4e8ef */
+    --sc-accent: 110 60 240; /* #6e3cf0 */
+  }
+
+  /* Dark theme — applied only on the docs root, never on <html>. */
+  .dark {
+    color-scheme: dark;
+    --sc-ink: 233 236 245; /* #e9ecf5 */
+    --sc-body: 154 163 183; /* #9aa3b7 */
+    --sc-surface: 10 15 28; /* #0a0f1c */
+    --sc-subtle: 20 27 48; /* #141b30 */
+    --sc-line: 36 44 70; /* #242c46 */
+    --sc-accent: 167 139 250; /* #a78bfa */
   }
 
   html {
@@ -43,5 +63,44 @@
   }
   .no-scrollbar::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Edge */
+  }
+
+  /* Docs "verification scan" — a one-shot light sweep across the endpoint
+     bar when a reference page loads, echoing the SDK's face-scan moment. */
+  .scan-sweep {
+    position: relative;
+  }
+  .scan-sweep::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      105deg,
+      transparent 40%,
+      rgba(118, 59, 241, 0.12) 50%,
+      transparent 60%
+    );
+    transform: translateX(-100%);
+    animation: scan-sweep 1.1s cubic-bezier(0.4, 0, 0.2, 1) 0.15s forwards;
+  }
+  .dark .scan-sweep::after {
+    background: linear-gradient(
+      105deg,
+      transparent 40%,
+      rgba(167, 139, 250, 0.14) 50%,
+      transparent 60%
+    );
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .scan-sweep::after {
+      animation: none;
+    }
+  }
+}
+
+@keyframes scan-sweep {
+  to {
+    transform: translateX(100%);
   }
 }

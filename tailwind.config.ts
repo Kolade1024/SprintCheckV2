@@ -11,7 +11,10 @@ import type { Config } from "tailwindcss";
  * These match Tailwind's defaults, declared explicitly for clarity.
  */
 const config: Config = {
-  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
+  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./lib/docs/**/*.ts"],
+  // Class-based dark mode, scoped: only the docs shell ever gets a `.dark`
+  // ancestor, so the rest of the site stays light.
+  darkMode: "class",
   theme: {
     screens: {
       md: "768px", // Tablet
@@ -20,20 +23,21 @@ const config: Config = {
     },
     extend: {
       colors: {
-        // Text
-        ink: "#0b1023", // headings / near-black navy
-        body: "#5b6375", // muted body copy
+        // Themeable neutrals — RGB triplets live in globals.css (:root / .dark)
+        // so the docs can flip to dark mode; light values match the original hex.
+        ink: "rgb(var(--sc-ink) / <alpha-value>)", // headings / near-black navy (#0b1023)
+        body: "rgb(var(--sc-body) / <alpha-value>)", // muted body copy (#5b6375)
         // Surfaces
-        surface: "#ffffff",
-        subtle: "#f6f7fe", // light lavender section background
+        surface: "rgb(var(--sc-surface) / <alpha-value>)", // #ffffff
+        subtle: "rgb(var(--sc-subtle) / <alpha-value>)", // light lavender (#f6f7fe)
         // Lines
-        line: "#e4e8ef",
+        line: "rgb(var(--sc-line) / <alpha-value>)", // #e4e8ef
         // Brand
         brand: {
           DEFAULT: "#763bf1",
           from: "#763bf1", // gradient start (purple)
           to: "#4b48ee", // gradient end (indigo)
-          accent: "#6e3cf0",
+          accent: "rgb(var(--sc-accent) / <alpha-value>)", // #6e3cf0
         },
         offwhite: "#fcfcfc",
         // Status

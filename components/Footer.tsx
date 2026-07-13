@@ -1,21 +1,38 @@
 import Image from "next/image";
 
+type FooterLink = { label: string; href: string };
+
+const link = (label: string, href = "#"): FooterLink => ({ label, href });
+
 const COLUMNS = [
   {
     heading: "Products",
-    links: ["BVN Verification", "NIN Verification", "KYC", "KYB", "Address", "Phone"],
+    links: [
+      link("BVN Verification", "/docs/bvn-check"),
+      link("NIN Verification", "/docs/nin-check"),
+      link("KYC", "/docs/sdk-flow"),
+      link("KYB", "/docs/cac-name-search"),
+      link("Address"),
+      link("Phone"),
+    ],
   },
   {
     heading: "Solutions",
-    links: ["Banking", "Lending", "Crypto", "Insurance", "Gig economy"],
+    links: [link("Banking"), link("Lending"), link("Crypto"), link("Insurance"), link("Gig economy")],
   },
   {
     heading: "Developers",
-    links: ["Documentation", "API Reference", "Status", "Changelog", "SDKs"],
+    links: [
+      link("Documentation", "/docs"),
+      link("API Reference", "/docs"),
+      link("Status"),
+      link("Changelog"),
+      link("SDKs", "/docs/sdk-flow"),
+    ],
   },
   {
     heading: "Company",
-    links: ["About", "Careers", "Press", "Partners", "Contact"],
+    links: [link("About"), link("Careers"), link("Press"), link("Partners"), link("Contact")],
   },
 ];
 
@@ -46,13 +63,13 @@ export default function Footer() {
             <nav key={column.heading} aria-label={column.heading} className="flex flex-col gap-4">
               <h4 className="text-base font-semibold text-ink">{column.heading}</h4>
               <ul className="flex flex-col gap-3">
-                {column.links.map((link) => (
-                  <li key={link}>
+                {column.links.map((item) => (
+                  <li key={item.label}>
                     <a
-                      href="#"
+                      href={item.href}
                       className="text-small text-body transition-colors hover:text-ink"
                     >
-                      {link}
+                      {item.label}
                     </a>
                   </li>
                 ))}
