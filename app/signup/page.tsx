@@ -9,16 +9,20 @@ import {
   SubmitButton,
   TextField,
 } from "@/components/AuthShell";
+import { authApi } from "@/lib/client/endpoints";
 
 export default function SignUpPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
+    const businessName = data.get("name")?.toString().trim() ?? "";
     const email = data.get("email")?.toString() ?? "";
+    // The API expects 7–15 bare digits, so strip formatting from the input.
+    const phone = (data.get("phone")?.toString() ?? "").replace(/\D/g, "");
     const password = data.get("password")?.toString() ?? "";
     const confirm = data.get("confirm")?.toString() ?? "";
 
@@ -30,14 +34,25 @@ export default function SignUpPage() {
       setError("Passwords don't match.");
       return;
     }
+    if (!/^[0-9]{7,15}$/.test(phone)) {
+      setError("Enter a valid phone number (7–15 digits).");
+      return;
+    }
 
     setError(null);
     setSubmitting(true);
-    // Wire up to your sign-up endpoint here, then send a verification code.
-    setTimeout(() => {
+    try {
+      await authApi.signup({
+        email,
+        password,
+        business_name: businessName,
+        phone_number: phone,
+      });
+      router.push("/signin?registered=1");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to create account.");
       setSubmitting(false);
-      router.push(`/verify-code?email=${encodeURIComponent(email)}`);
-    }, 1200);
+    }
   }
 
   return (
@@ -65,11 +80,11 @@ export default function SignUpPage() {
           id="name"
           name="name"
           type="text"
-          label="Full name"
+          label="Business name"
           icon={User}
-          autoComplete="name"
+          autoComplete="organization"
           required
-          placeholder="Ada Lovelace"
+          placeholder="Acme Inc."
           wrapperClassName="md:col-span-2"
         />
 

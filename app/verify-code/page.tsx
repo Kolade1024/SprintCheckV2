@@ -4,6 +4,7 @@ import { Suspense, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "@/components/icons";
 import { AuthShell, SubmitButton } from "@/components/AuthShell";
+import { authApi } from "@/lib/client/endpoints";
 
 const CODE_LENGTH = 6;
 
@@ -15,6 +16,7 @@ function VerifyCodeForm() {
   const [digits, setDigits] = useState<string[]>(Array(CODE_LENGTH).fill(""));
   const [submitting, setSubmitting] = useState(false);
   const [resent, setResent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const inputs = useRef<Array<HTMLInputElement | null>>([]);
 
   const code = digits.join("");
@@ -56,20 +58,35 @@ function VerifyCodeForm() {
       inputs.current[index + 1]?.focus();
   }
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!complete) return;
+    if (!email) {
+      setError("Missing email. Start again from the forgot-password screen.");
+      return;
+    }
+    setError(null);
     setSubmitting(true);
-    // Wire up to your "verify code" endpoint here.
-    setTimeout(() => {
+    try {
+      await authApi.verifyResetCode(email, code);
+      // Carry the verified email + code to the reset-password step.
+      router.push(
+        `/set-new-password?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`,
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Invalid or expired code.");
       setSubmitting(false);
-      router.push("/set-new-password");
-    }, 1200);
+    }
   }
 
-  function handleResend() {
+  async function handleResend() {
+    if (!email || resent) return;
     setResent(true);
-    // Wire up to your "resend code" endpoint here.
+    try {
+      await authApi.forgotPassword(email);
+    } catch {
+      /* surfaced on the next verify attempt if it truly failed */
+    }
     setTimeout(() => setResent(false), 3000);
   }
 
@@ -116,6 +133,12 @@ function VerifyCodeForm() {
             />
           ))}
         </div>
+
+        {error && (
+          <p className="text-small font-medium text-red-600" role="alert">
+            {error}
+          </p>
+        )}
 
         <SubmitButton loading={submitting} loadingText="Verifying…">
           Verify

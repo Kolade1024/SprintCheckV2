@@ -9,19 +9,29 @@ import {
   SubmitButton,
   TextField,
 } from "@/components/AuthShell";
+import { authApi } from "@/lib/client/endpoints";
 
 export default function SignInPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const data = new FormData(e.currentTarget);
+    const email = data.get("email")?.toString() ?? "";
+    const password = data.get("password")?.toString() ?? "";
+    const remember = data.get("remember") === "on";
+
+    setError(null);
     setSubmitting(true);
-    // Wire up to your auth endpoint here.
-    setTimeout(() => {
+    try {
+      await authApi.login({ email, password, remember });
+      router.push("/dashboard");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to sign in.");
       setSubmitting(false);
-      router.push("/");
-    }, 1200);
+    }
   }
 
   return (
@@ -68,6 +78,12 @@ export default function SignInPage() {
             </a>
           }
         />
+
+        {error && (
+          <p className="text-small font-medium text-red-600" role="alert">
+            {error}
+          </p>
+        )}
 
         <label
           htmlFor="remember"

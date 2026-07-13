@@ -1,21 +1,26 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, CheckCircle } from "@/components/icons";
 import {
   AuthShell,
   PasswordField,
   SubmitButton,
 } from "@/components/AuthShell";
+import { authApi } from "@/lib/client/endpoints";
 
-export default function SetNewPasswordPage() {
+function SetNewPasswordForm() {
   const router = useRouter();
+  const params = useSearchParams();
+  const email = params.get("email");
+  const code = params.get("code");
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
     const password = data.get("password")?.toString() ?? "";
@@ -29,14 +34,20 @@ export default function SetNewPasswordPage() {
       setError("Passwords don't match.");
       return;
     }
+    if (!email || !code) {
+      setError("Missing reset details. Start again from the forgot-password screen.");
+      return;
+    }
 
     setError(null);
     setSubmitting(true);
-    // Wire up to your "set new password" endpoint here.
-    setTimeout(() => {
-      setSubmitting(false);
+    try {
+      await authApi.resetPassword(email, code, password);
       setDone(true);
-    }, 1200);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to update password.");
+      setSubmitting(false);
+    }
   }
 
   if (done) {
@@ -110,5 +121,13 @@ export default function SetNewPasswordPage() {
         </SubmitButton>
       </form>
     </AuthShell>
+  );
+}
+
+export default function SetNewPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <SetNewPasswordForm />
+    </Suspense>
   );
 }

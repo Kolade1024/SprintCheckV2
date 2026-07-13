@@ -592,6 +592,13 @@ export const MessageSquare = (p: IconProps) => (
   </Base>
 );
 
+export const Download = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <path d="M7 10l5 5 5-5M12 15V3" />
+  </Base>
+);
+
 export const Save = (p: IconProps) => (
   <Base {...p}>
     <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" />

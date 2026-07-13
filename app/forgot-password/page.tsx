@@ -4,21 +4,27 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle, Mail } from "@/components/icons";
 import { AuthShell, SubmitButton, TextField } from "@/components/AuthShell";
+import { authApi } from "@/lib/client/endpoints";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setSubmitting(true);
     const email = new FormData(e.currentTarget).get("email")?.toString() ?? "";
-    // Wire up to your "send reset code" endpoint here.
-    setTimeout(() => {
-      setSubmitting(false);
+    setError(null);
+    setSubmitting(true);
+    try {
+      await authApi.forgotPassword(email);
       setSentTo(email);
-    }, 1200);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to send reset code.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   const backToSignIn = (
@@ -89,6 +95,12 @@ export default function ForgotPasswordPage() {
           required
           placeholder="you@company.com"
         />
+
+        {error && (
+          <p className="text-small font-medium text-red-600" role="alert">
+            {error}
+          </p>
+        )}
 
         <SubmitButton loading={submitting} loadingText="Sending code…">
           Send reset code
