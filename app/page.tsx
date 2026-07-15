@@ -2,6 +2,7 @@ import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import TrustStrip from "@/components/TrustStrip";
 import ProductsSection from "@/components/ProductsSection";
+import PricingSection from "@/components/PricingSection";
 import PlatformSection from "@/components/PlatformSection";
 import HowItWorks from "@/components/HowItWorks";
 import DeveloperSection from "@/components/DeveloperSection";
@@ -22,6 +23,7 @@ export default function Home() {
         <PlatformSection />
         <HowItWorks />
         <DeveloperSection />
+        <PricingSection />
         <SecuritySection />
         <Testimonials />
         <Faq />

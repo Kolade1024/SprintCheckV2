@@ -70,7 +70,7 @@ export default function Hero() {
                 <ArrowRight className="h-4 w-4" />
               </a>
               <a
-                href="#"
+                href="/contact"
                 className="inline-flex h-12 items-center justify-center rounded-btn border border-line bg-white px-6 text-base font-medium text-ink shadow-btn transition-colors hover:bg-subtle"
               >
                 Book a Demo

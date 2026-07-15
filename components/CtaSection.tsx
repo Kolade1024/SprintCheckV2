@@ -36,14 +36,14 @@ export default function CtaSection() {
             {/* Right actions */}
             <div className="flex flex-wrap gap-3 lg:justify-end">
               <a
-                href="#"
+                href="/signup"
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-btn bg-white px-6 text-base font-medium text-ink shadow-btn transition-transform hover:-translate-y-px"
               >
                 Create free account
                 <ArrowRight className="h-4 w-4" />
               </a>
               <a
-                href="#"
+                href="/contact"
                 className="inline-flex h-12 items-center justify-center rounded-btn border border-white/30 bg-white/10 px-6 text-base font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20"
               >
                 Talk to sales

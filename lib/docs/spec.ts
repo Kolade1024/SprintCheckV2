@@ -53,8 +53,8 @@ export type NavItem = { slug: string; label: string; method?: Method };
 export type NavSection = { label: string; realm?: Realm; items: NavItem[] };
 
 export const BASES = {
-  api: "https://sprintcheck.megasprintlimited.com.ng/api",
-  sdk: "https://sprintcheck.megasprintlimited.com.ng/api/sdk",
+  api: "https://api.sprintcheck.megasprintlimited.com.ng/api/v1",
+  sdk: "https://api.sprintcheck.megasprintlimited.com.ng/api/sdk",
 } as const;
 
 export const REALMS: Record<

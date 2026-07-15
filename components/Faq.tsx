@@ -4,43 +4,62 @@ import { useState } from "react";
 import SectionHeading from "./SectionHeading";
 import { Plus, Minus } from "./icons";
 
-/**
- * The Figma frame shows the last item expanded with its answer; the toggle is a
- * built-in interactive component (collapsed/expanded icon states). Only the last
- * answer's copy is present in the design — the other answers are written to match
- * so the accordion functions as intended.
- */
 const FAQS = [
+  {
+    question: "What is SprintCheck used for?",
+    answer:
+      "SprintCheck helps you verify customer and business identities in real time so you can onboard faster, reduce fraud, and stay compliant. It combines multiple checks (BVN, NIN, voter's card, facial, and business verification) in one platform and API.",
+  },
+  {
+    question: "Which verification checks are available?",
+    answer:
+      "You can run BVN verification, NIN verification, voter's card verification, identity checks with selfie liveness, facial re-verification, and business (CAC/KYB) verification. This lets teams cover both individual KYC and business onboarding from one integration.",
+  },
   {
     question: "How long does integration take?",
     answer:
-      "Most teams are live in a day. Drop in our SDK or call the REST API directly, test against the sandbox, and switch to production keys when you're ready.",
+      "Most teams can start in hours and go live quickly. Use the sandbox to test flows, integrate via REST API or SDK-friendly patterns, and switch to production keys when your compliance and risk rules are ready.",
   },
   {
-    question: "Which data sources do you connect to?",
+    question: "Do you provide a sandbox for testing?",
     answer:
-      "We connect directly to authoritative sources, including the BVN and NIN databases, CAC, mobile carriers and global watchlists.",
+      "Yes. SprintCheck includes a sandbox environment so your team can validate requests, responses, and workflow logic before production rollout.",
   },
   {
-    question: "Is SprintCheck NDPR & GDPR compliant?",
+    question: "Is SprintCheck compliant with NDPR and GDPR?",
     answer:
-      "Yes. SprintCheck is NDPR and GDPR compliant by default, with data residency options in Nigeria, the EU and the US.",
+      "Yes. SprintCheck is built for privacy and regulatory readiness, including NDPR/GDPR-aligned handling and data residency options across Nigeria, EU, and US regions.",
   },
   {
-    question: "Do you offer custom enterprise contracts?",
+    question: "How secure is customer data on SprintCheck?",
     answer:
-      "Absolutely. Enterprise plans include dedicated infrastructure, custom SLAs, SSO/RBAC, audit exports and a named customer success manager.",
+      "SprintCheck uses enterprise-grade security controls such as encryption in transit and at rest, access control, audit logging, and signed webhooks. The platform is designed for high-trust, regulated use cases.",
   },
   {
-    question: "What happens if a verification fails?",
+    question: "What happens when a verification request fails?",
     answer:
-      "You only pay for successful verifications. Failed lookups (due to upstream source outage) are not billed and are automatically retried with circuit-breaker protection.",
+      "If a data source is temporarily unavailable, SprintCheck can retry intelligently and return structured status responses so your system can take the right next step (retry, queue, or manual review) without breaking onboarding flows.",
+  },
+  {
+    question: "Can non-engineering teams manage verification rules?",
+    answer:
+      "Yes. Risk and compliance teams can use workflow tools and dashboard controls to adjust decision logic, escalation paths, and review processes without waiting for code changes each time.",
+  },
+  {
+    question: "Can SprintCheck scale for high-volume onboarding?",
+    answer:
+      "Yes. SprintCheck is designed for high-throughput verification workloads with low-latency responses, so teams can support growth without stitching together multiple providers.",
+  },
+  {
+    question: "Do you offer enterprise plans and custom contracts?",
+    answer:
+      "Yes. Enterprise options can include custom SLAs, dedicated support, advanced access controls, and tailored deployment/compliance requirements for larger organizations.",
   },
 ];
 
 export default function Faq() {
-  // Last item open by default, matching the Figma frame.
-  const [openIndex, setOpenIndex] = useState<number | null>(FAQS.length - 1);
+  // First item open by default so the section opens with a sensible answer.
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
     <section id="faq" className="bg-surface py-20 lg:py-24">

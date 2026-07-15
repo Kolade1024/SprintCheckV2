@@ -8,13 +8,13 @@ const BADGES: { label: string; Icon: (p: SVGProps<SVGSVGElement>) => JSX.Element
   { label: "Millions of verifications", Icon: ShieldCheckTest },
 ];
 
-const BRANDS = [
-  "Honour World",
-  "Osusupay",
-  "Cashonrails",
-  "Mega Cheap Data",
-  "PlanetF",
-  "Paylony",
+const BRANDS: { name: string; href: string }[] = [
+  { name: "Honour World", href: "https://honourworld.com/" },
+  { name: "Osusupay", href: "https://osusupay.com" },
+  { name: "Cashonrails", href: "https://cashonrails.com/" },
+  { name: "Mega Cheap Data", href: "https://megacheapdata.5starcompany.com.ng/" },
+  { name: "PlanetF", href: "https://www.planetf.ng/" },
+  { name: "Paylony", href: "https://paylony.com/" },
 ];
 
 export default function TrustStrip() {
@@ -42,12 +42,16 @@ export default function TrustStrip() {
             Powering verification for industry leaders
           </p>
           <ul className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
-            {BRANDS.map((brand) => (
-              <li
-                key={brand}
-                className="text-xl font-bold text-ink/30 transition-colors hover:text-ink/50"
-              >
-                {brand}
+            {BRANDS.map(({ name, href }) => (
+              <li key={name}>
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-sm text-xl font-bold text-ink/30 transition-colors hover:text-ink/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+                >
+                  {name}
+                </a>
               </li>
             ))}
           </ul>

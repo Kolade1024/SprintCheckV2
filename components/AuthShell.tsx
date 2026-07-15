@@ -130,7 +130,22 @@ type FieldProps = InputHTMLAttributes<HTMLInputElement> & {
   action?: React.ReactNode;
   /** Extra classes on the field wrapper, e.g. grid column spans. */
   wrapperClassName?: string;
+  /** Field-level validation message shown beneath the input. */
+  error?: string;
 };
+
+/** Red-state overrides applied to the input when the field has an error. */
+const INPUT_ERROR =
+  "border-red-500 focus:border-red-500 focus:ring-red-500/20";
+
+function FieldError({ id, message }: { id?: string; message?: string }) {
+  if (!message) return null;
+  return (
+    <p id={id ? `${id}-error` : undefined} className="text-small font-medium text-red-600" role="alert">
+      {message}
+    </p>
+  );
+}
 
 export function TextField({
   label,
@@ -138,6 +153,7 @@ export function TextField({
   action,
   id,
   wrapperClassName = "",
+  error,
   ...props
 }: FieldProps) {
   return (
@@ -154,10 +170,13 @@ export function TextField({
         )}
         <input
           id={id}
-          className={`${INPUT_BASE} ${Icon ? "pl-11" : "px-4"} pr-4`}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error && id ? `${id}-error` : undefined}
+          className={`${INPUT_BASE} ${Icon ? "pl-11" : "px-4"} pr-4 ${error ? INPUT_ERROR : ""}`}
           {...props}
         />
       </div>
+      <FieldError id={id} message={error} />
     </div>
   );
 }
@@ -167,6 +186,7 @@ export function PasswordField({
   action,
   id,
   wrapperClassName = "",
+  error,
   ...props
 }: Omit<FieldProps, "icon">) {
   const [show, setShow] = useState(false);
@@ -183,7 +203,9 @@ export function PasswordField({
         <input
           id={id}
           type={show ? "text" : "password"}
-          className={`${INPUT_BASE} pl-11 pr-11`}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error && id ? `${id}-error` : undefined}
+          className={`${INPUT_BASE} pl-11 pr-11 ${error ? INPUT_ERROR : ""}`}
           {...props}
         />
         <button
@@ -195,6 +217,7 @@ export function PasswordField({
           {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
         </button>
       </div>
+      <FieldError id={id} message={error} />
     </div>
   );
 }

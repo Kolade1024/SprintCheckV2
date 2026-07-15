@@ -21,7 +21,7 @@ const BADGES: {
 
 export default function SecuritySection() {
   return (
-    <section className="bg-surface py-20 lg:py-24">
+    <section id="security" className="bg-surface py-20 lg:py-24">
       <div className="container-x grid grid-cols-1 items-center gap-12 lg:grid-cols-[1.1fr_1fr]">
         {/* Left column */}
         <div className="flex flex-col items-start gap-6">

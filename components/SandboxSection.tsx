@@ -15,66 +15,158 @@ import {
 } from "./icons";
 import type { SVGProps } from "react";
 
+type Field = {
+  label: string;
+  key: string;
+  sample: string;
+};
+
 type Endpoint = {
   label: string;
   method: string;
+  /** Which API surface the endpoint lives on — mirrors the docs. */
+  base: "api" | "sdk";
   path: string;
-  fieldLabel: string;
-  bodyKey: string;
-  sample: string;
+  /** SDK checks send the raw API key; merchant endpoints send a bearer token. */
+  auth: "apikey" | "bearer";
+  fields: Field[];
   response: Record<string, unknown>;
 };
 
+/*
+ * Endpoints, request bodies and response shapes mirror the production API
+ * (SprintCheck Postman collection). Responses are still mocked — the sandbox
+ * never calls upstream sources.
+ */
 const ENDPOINTS: Endpoint[] = [
   {
-    label: "BVN Verification",
+    label: "BVN Check",
     method: "POST",
-    path: "/v1/identity/bvn",
-    fieldLabel: "Bank Verification Number",
-    bodyKey: "bvn",
-    sample: "22212345678",
+    base: "sdk",
+    path: "/bvn",
+    auth: "apikey",
+    fields: [
+      { label: "Bank Verification Number", key: "number", sample: "22454670613" },
+      { label: "Identifier", key: "identifier", sample: "dev@yourapp.com" },
+    ],
     response: {
-      status: "verified",
-      first_name: "Ada",
-      last_name: "Okafor",
-      date_of_birth: "1990-04-12",
-      phone: "0803*****21",
-      confidence: 0.99,
+      status: true,
+      message: "BVN check initiated",
+      data: {
+        reference: "36135803-0843-48d6-b8bf-5d47490a6ade",
+        identifier: "dev@yourapp.com",
+        type: "bvn",
+        status: "pending",
+        fee: 50,
+      },
     },
   },
   {
-    label: "NIN Verification",
+    label: "NIN Check",
     method: "POST",
-    path: "/v1/identity/nin",
-    fieldLabel: "National Identity Number",
-    bodyKey: "nin",
-    sample: "70123456789",
+    base: "sdk",
+    path: "/nin",
+    auth: "apikey",
+    fields: [
+      { label: "National Identification Number", key: "number", sample: "52306459347" },
+      { label: "Identifier", key: "identifier", sample: "dev@yourapp.com" },
+    ],
     response: {
-      status: "verified",
-      first_name: "Chidi",
-      last_name: "Eze",
-      gender: "male",
-      confidence: 0.98,
+      status: true,
+      message: "NIN check initiated",
+      data: {
+        reference: "fab0f22b-2948-4c75-9b4d-0f59687d5138",
+        identifier: "dev@yourapp.com",
+        type: "nin",
+        status: "pending",
+        fee: 50,
+      },
     },
   },
   {
-    label: "Phone Verification",
+    label: "Voter's Card Check",
     method: "POST",
-    path: "/v1/identity/phone",
-    fieldLabel: "Phone Number",
-    bodyKey: "phone",
-    sample: "08031234567",
+    base: "sdk",
+    path: "/voters",
+    auth: "apikey",
+    fields: [
+      { label: "Voter Identification Number", key: "number", sample: "90F5AE4625505997419" },
+      { label: "Identifier", key: "identifier", sample: "dev@yourapp.com" },
+    ],
     response: {
-      status: "verified",
-      carrier: "MTN",
-      line_type: "mobile",
-      confidence: 0.97,
+      status: true,
+      message: "Voter's card check initiated",
+      data: {
+        reference: "2d9621d1-576c-41a7-8879-83a563d194c8",
+        identifier: "dev@yourapp.com",
+        type: "voters",
+        status: "pending",
+        fee: 50,
+      },
     },
   },
-
+  {
+    label: "Facial Check",
+    method: "POST",
+    base: "sdk",
+    path: "/facial",
+    auth: "apikey",
+    fields: [
+      { label: "Identifier (from a previous check)", key: "identifier", sample: "dev@yourapp.com" },
+      { label: "Reference", key: "reference", sample: "order_8821" },
+    ],
+    response: {
+      status: true,
+      message: "Facial check initiated",
+      data: {
+        reference: "order_8821",
+        identifier: "dev@yourapp.com",
+        type: "facial",
+        status: "pending",
+        fee: 30,
+      },
+    },
+  },
+  {
+    label: "Business Name Search",
+    method: "POST",
+    base: "api",
+    path: "/cac/name",
+    auth: "bearer",
+    fields: [{ label: "Business name", key: "name", sample: "5star" }],
+    response: {
+      status: true,
+      message: "Search Successful",
+      data: [
+        {
+          approved_name: "5STAR AGRO-ENTERPRISE",
+          nature_of_business_name: "Sale of Agricultural Produce",
+          registration_date: "2016-11-04T11:37:36.853Z",
+          rc_number: "2456105",
+          id: 3929637,
+          classification: "BUSINESS_NAME",
+          active: false,
+        },
+        {
+          approved_name: "5STAR-PHONEZ ENT.",
+          nature_of_business_name: null,
+          registration_date: "2024-08-26T14:46:29.229Z",
+          rc_number: "7870835",
+          id: 9773599,
+          classification: "BUSINESS_NAME",
+          active: true,
+        },
+      ],
+    },
+  },
 ];
 
-const API_KEY = "sk_sandbox_demo_xxxxxxxxxxxxx";
+const API_KEY = "scb_sandbox_demo_xxxxxxxxxxxxxxxx";
+/* Same bases as the API reference — merchant surface and SDK identity checks. */
+const BASE_URLS = {
+  api: "https://api.sprintcheck.megasprintlimited.com.ng/api/v1",
+  sdk: "https://api.sprintcheck.megasprintlimited.com.ng/api/sdk",
+} as const;
 
 const FEATURES: {
   title: string;
@@ -101,11 +193,17 @@ const FEATURES: {
     },
   ];
 
-function buildCurl(ep: Endpoint, value: string) {
-  return `curl -X ${ep.method} https://api.sprintcheck.io${ep.path} \\
-  -H "Authorization: Bearer ${API_KEY}" \\
+function buildCurl(ep: Endpoint, values: Record<string, string>, apiKey: string) {
+  const auth = ep.auth === "bearer" ? `Bearer ${apiKey}` : apiKey;
+  const body = ep.fields
+    .map((f) => `    "${f.key}": "${values[f.key] || f.sample}"`)
+    .join(",\n");
+  return `curl -X ${ep.method} ${BASE_URLS[ep.base]}${ep.path} \\
+  -H "Authorization: ${auth}" \\
   -H "Content-Type: application/json" \\
-  -d '{ "${ep.bodyKey}": "${value}" }'`;
+  -d '{
+${body}
+  }'`;
 }
 
 function EndpointSelect({
@@ -245,20 +343,26 @@ function EndpointSelect({
   );
 }
 
+const sampleValues = (ep: Endpoint) =>
+  Object.fromEntries(ep.fields.map((f) => [f.key, f.sample]));
+
 export default function SandboxSection() {
   const [index, setIndex] = useState(0);
-  const [value, setValue] = useState(ENDPOINTS[0].sample);
+  const [values, setValues] = useState<Record<string, string>>(() =>
+    sampleValues(ENDPOINTS[0])
+  );
+  const [apiKey, setApiKey] = useState(API_KEY);
   const [tab, setTab] = useState<"curl" | "response">("curl");
   const [sent, setSent] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const endpoint = ENDPOINTS[index];
-  const curl = buildCurl(endpoint, value || endpoint.sample);
+  const curl = buildCurl(endpoint, values, apiKey || API_KEY);
   const responseJson = JSON.stringify(endpoint.response, null, 2);
 
   function selectEndpoint(i: number) {
     setIndex(i);
-    setValue(ENDPOINTS[i].sample);
+    setValues(sampleValues(ENDPOINTS[i]));
     setSent(false);
     setTab("curl");
   }
@@ -339,38 +443,47 @@ export default function SandboxSection() {
               </span>
             </label>
 
-            {/* API key */}
+            {/* API key / merchant token */}
             <label className="flex flex-col gap-2">
               <span className="flex items-center gap-1.5 text-stat-label font-semibold uppercase tracking-[0.06em] text-body">
                 <KeyRound className="h-3.5 w-3.5" />
-                API Key
+                {endpoint.auth === "bearer" ? "Merchant token" : "API key"}
               </span>
               <input
                 type="text"
-                defaultValue={API_KEY}
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
                 className="w-full rounded-btn border border-line bg-surface px-4 py-3 font-mono text-small text-ink shadow-card outline-none transition-colors focus:border-brand-accent"
               />
             </label>
 
-            {/* Dynamic field */}
-            <label className="flex flex-col gap-2">
-              <span className="text-stat-label font-semibold uppercase tracking-[0.06em] text-body">
-                {endpoint.fieldLabel}
-              </span>
-              <input
-                type="text"
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                className="w-full rounded-btn border border-line bg-surface px-4 py-3 font-mono text-base text-ink shadow-card outline-none transition-colors focus:border-brand-accent"
-              />
-              <button
-                type="button"
-                onClick={() => setValue(endpoint.sample)}
-                className="self-start text-small font-medium text-brand-accent transition-colors hover:text-brand"
-              >
-                Use sample value
-              </button>
-            </label>
+            {/* Request body fields */}
+            {endpoint.fields.map((f) => (
+              <label key={f.key} className="flex flex-col gap-2">
+                <span className="text-stat-label font-semibold uppercase tracking-[0.06em] text-body">
+                  {f.label}
+                  <span className="ml-1.5 normal-case tracking-normal text-body/60">
+                    · {f.key}
+                  </span>
+                </span>
+                <input
+                  type="text"
+                  value={values[f.key] ?? ""}
+                  onChange={(e) =>
+                    setValues((v) => ({ ...v, [f.key]: e.target.value }))
+                  }
+                  placeholder={f.sample}
+                  className="w-full rounded-btn border border-line bg-surface px-4 py-3 font-mono text-base text-ink shadow-card outline-none transition-colors focus:border-brand-accent"
+                />
+              </label>
+            ))}
+            <button
+              type="button"
+              onClick={() => setValues(sampleValues(endpoint))}
+              className="-mt-2 self-start text-small font-medium text-brand-accent transition-colors hover:text-brand"
+            >
+              Use sample values
+            </button>
 
             <button
               type="button"

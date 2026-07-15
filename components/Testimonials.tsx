@@ -4,6 +4,13 @@ import { Star } from "./icons";
 const TESTIMONIALS = [
   {
     quote:
+      "SprintCheck has significantly improved how we verify and onboard users. The APIs are reliable, integration was straightforward, and the dashboard gives our operations team the visibility they need without unnecessary complexity. It's become an important part of our compliance and onboarding workflow.",
+    initials: "MT",
+    name: "Miriam Tega-Baron",
+    role: "CEO, Osusupay",
+  },
+  {
+    quote:
       "SprintCheck cut our onboarding time from days to seconds. The BVN and NIN APIs just work — and the dashboard makes ops self-serve.",
     initials: "AO",
     name: "Adaeze Okafor",
@@ -15,13 +22,6 @@ const TESTIMONIALS = [
     initials: "TA",
     name: "Tunde Adebayo",
     role: "CTO, Lendly",
-  },
-  {
-    quote:
-      "From sandbox to production in a weekend. Fraud rates dropped 38% in the first quarter.",
-    initials: "SM",
-    name: "Sarah Mensah",
-    role: "VP Engineering, Tola",
   },
 ];
 

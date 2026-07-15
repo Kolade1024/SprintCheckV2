@@ -103,27 +103,27 @@ export const ShieldCheckTest = (p: IconProps) => (
 );
 
 export const IdCard = (p: IconProps) => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12.0002 10C11.4698 10 10.9611 10.2107 10.586 10.5858C10.2109 10.9609 10.0002 11.4696 10.0002 12C10.0002 13.02 9.90023 14.51 9.74023 16" stroke="#FCFCFC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-    <path d="M14 13.1201C14 15.5001 14 19.5001 13 22.0001" stroke="#FCFCFC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-    <path d="M17.29 21.02C17.41 20.42 17.72 18.72 17.79 18" stroke="#FCFCFC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-    <path d="M2 12C2 9.90118 2.66037 7.85555 3.88758 6.1529C5.11478 4.45024 6.8466 3.17687 8.83772 2.51317C10.8288 1.84946 12.9783 1.82906 14.9817 2.45486C16.985 3.08067 18.7407 4.32094 20 6" stroke="#FCFCFC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-    <path d="M2 16H2.01" stroke="#FCFCFC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-    <path d="M21.7998 16C21.9998 14 21.9308 10.646 21.7998 10" stroke="#FCFCFC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-    <path d="M5 19.5C5.5 18 6 15 6 12C5.99899 11.3189 6.11397 10.6425 6.34 10" stroke="#FCFCFC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-    <path d="M8.6499 22C8.8599 21.34 9.0999 20.68 9.2199 20" stroke="#FCFCFC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-    <path d="M9 6.79994C9.9124 6.27317 10.9474 5.99593 12.001 5.99609C13.0545 5.99626 14.0894 6.27384 15.0017 6.8009C15.9139 7.32797 16.6713 8.08594 17.1976 8.99859C17.7239 9.91124 18.0007 10.9464 18 11.9999V13.9999" stroke="#FCFCFC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...p}>
+    <path d="M12.0002 10C11.4698 10 10.9611 10.2107 10.586 10.5858C10.2109 10.9609 10.0002 11.4696 10.0002 12C10.0002 13.02 9.90023 14.51 9.74023 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M14 13.1201C14 15.5001 14 19.5001 13 22.0001" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M17.29 21.02C17.41 20.42 17.72 18.72 17.79 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M2 12C2 9.90118 2.66037 7.85555 3.88758 6.1529C5.11478 4.45024 6.8466 3.17687 8.83772 2.51317C10.8288 1.84946 12.9783 1.82906 14.9817 2.45486C16.985 3.08067 18.7407 4.32094 20 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M2 16H2.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M21.7998 16C21.9998 14 21.9308 10.646 21.7998 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M5 19.5C5.5 18 6 15 6 12C5.99899 11.3189 6.11397 10.6425 6.34 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M8.6499 22C8.8599 21.34 9.0999 20.68 9.2199 20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M9 6.79994C9.9124 6.27317 10.9474 5.99593 12.001 5.99609C13.0545 5.99626 14.0894 6.27384 15.0017 6.8009C15.9139 7.32797 16.6713 8.08594 17.1976 8.99859C17.7239 9.91124 18.0007 10.9464 18 11.9999V13.9999" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
   </svg>
 
 );
 
 export const Fingerprint = (p: IconProps) => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M16 10H18" stroke="#FCFCFC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-    <path d="M16 14H18" stroke="#FCFCFC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-    <path d="M6.16992 15.0001C6.37606 14.4141 6.75902 13.9065 7.26594 13.5475C7.77286 13.1884 8.37873 12.9956 8.99992 12.9956C9.62111 12.9956 10.227 13.1884 10.7339 13.5475C11.2408 13.9065 11.6238 14.4141 11.8299 15.0001" stroke="#FCFCFC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-    <path d="M9 13C10.1046 13 11 12.1046 11 11C11 9.89543 10.1046 9 9 9C7.89543 9 7 9.89543 7 11C7 12.1046 7.89543 13 9 13Z" stroke="#FCFCFC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-    <path d="M20 5H4C2.89543 5 2 5.89543 2 7V17C2 18.1046 2.89543 19 4 19H20C21.1046 19 22 18.1046 22 17V7C22 5.89543 21.1046 5 20 5Z" stroke="#FCFCFC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...p}>
+    <path d="M16 10H18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M16 14H18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M6.16992 15.0001C6.37606 14.4141 6.75902 13.9065 7.26594 13.5475C7.77286 13.1884 8.37873 12.9956 8.99992 12.9956C9.62111 12.9956 10.227 13.1884 10.7339 13.5475C11.2408 13.9065 11.6238 14.4141 11.8299 15.0001" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M9 13C10.1046 13 11 12.1046 11 11C11 9.89543 10.1046 9 9 9C7.89543 9 7 9.89543 7 11C7 12.1046 7.89543 13 9 13Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M20 5H4C2.89543 5 2 5.89543 2 7V17C2 18.1046 2.89543 19 4 19H20C21.1046 19 22 18.1046 22 17V7C22 5.89543 21.1046 5 20 5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
   </svg>
 
 );

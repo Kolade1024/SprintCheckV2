@@ -4,13 +4,15 @@ import { useState } from "react";
 import Image from "next/image";
 import { Menu, X } from "./icons";
 
+// Root-relative anchors (/#…) so section links work from any page, not just
+// the homepage — on /sandbox or /contact they navigate home, then scroll.
 const NAV_LINKS = [
-  { label: "Products", href: "#products" },
-  { label: "Pricing", href: "#pricing" },
-  { label: "Developers", href: "#developers" },
+  { label: "Products", href: "/#products" },
+  { label: "Pricing", href: "/#pricing" },
+  { label: "Developers", href: "/#developers" },
   { label: "Docs", href: "/docs" },
   { label: "Sandbox", href: "/sandbox" },
-  { label: "FAQ", href: "#faq" },
+  { label: "Contact", href: "/contact" },
 ];
 
 export default function Navbar() {

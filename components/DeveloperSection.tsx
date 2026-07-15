@@ -8,9 +8,9 @@ type Item = {
 };
 
 const ITEMS: Item[] = [
-  { title: "REST API", description: "Predictable JSON, OAuth2 & HMAC webhooks.", Icon: Code },
+  { title: "REST API", description: "Predictable JSON, API-key auth & webhooks on every check.", Icon: Code },
   { title: "Sandbox Access", description: "Free test environment with realistic data.", Icon: FlaskConical },
-  { title: "Developer Docs", description: "Quickstarts, references and recipes.", Icon: BookOpen },
+  { title: "Developer Docs", description: "Full API reference with SDKs for Android, Flutter, React Native & Expo.", Icon: BookOpen },
 ];
 
 /* Reusable token spans for the code window */
@@ -49,29 +49,29 @@ function CodeWindow() {
         {/* Code body */}
         <pre className="no-scrollbar overflow-x-auto px-6 py-6 font-mono text-[13px] leading-[1.7] text-code-text">
           <code>
-            <C>{"// Verify a Bank Verification Number"}</C>
+            <C>{"// Start a BVN check"}</C>
             {"\n"}
-            <K>const</K> res = <K>await</K> <F>fetch</F>(<S>{'"https://api.sprintcheck.io/v1/bvn"'}</S>, {"{"}
+            <K>const</K> res = <K>await</K> <F>fetch</F>(<S>{'"https://api.sprintcheck.megasprintlimited.com.ng/api/sdk/bvn"'}</S>, {"{"}
             {"\n"}
             {"  "}method: <S>{'"POST"'}</S>,
             {"\n"}
             {"  "}headers: {"{"}
             {"\n"}
-            {"    "}<S>{'"Authorization"'}</S>: <S>{"`Bearer "}</S>
-            <span className="text-code-punct">{"${"}</span>process.env.SPRINTCHECK_KEY
-            <span className="text-code-punct">{"}"}</span><S>{"`"}</S>,
+            {"    "}<S>{'"Authorization"'}</S>: process.env.SPRINTCHECK_API_KEY,
             {"\n"}
             {"    "}<S>{'"Content-Type"'}</S>: <S>{'"application/json"'}</S>,
             {"\n"}
             {"  "}{"}"},
             {"\n"}
-            {"  "}body: <F>JSON</F>.<F>stringify</F>({"{ "}bvn: <S>{'"22212345678"'}</S>{" }"}),
+            {"  "}body: <F>JSON</F>.<F>stringify</F>({"{ "}number: <S>{'"22454670613"'}</S>, identifier: <S>{'"user@yourapp.com"'}</S>{" }"}),
             {"\n"}
             {"}"});
             {"\n\n"}
             <K>const</K> data = <K>await</K> res.<F>json</F>();
             {"\n"}
-            <C>{'// { status: "verified", first_name: "Ada", confidence: 0.99 }'}</C>
+            <C>{'// { status: true, message: "BVN check initiated",'}</C>
+            {"\n"}
+            <C>{'//   data: { reference: "36135803-…", status: "pending", fee: 50 } }'}</C>
           </code>
         </pre>
       </div>

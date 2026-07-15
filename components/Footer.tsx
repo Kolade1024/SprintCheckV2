@@ -12,8 +12,8 @@ const COLUMNS = [
       link("NIN Verification", "/docs/nin-check"),
       link("KYC", "/docs/sdk-flow"),
       link("KYB", "/docs/cac-name-search"),
-      link("Address"),
-      link("Phone"),
+      link("Voter's Card", "/docs/voters-check"),
+      link("Facial Check", "/docs/facial-check"),
     ],
   },
   {
@@ -32,11 +32,15 @@ const COLUMNS = [
   },
   {
     heading: "Company",
-    links: [link("About"), link("Careers"), link("Press"), link("Partners"), link("Contact")],
+    links: [link("About"), link("Careers"), link("Press"), link("Partners"), link("Contact", "/contact")],
   },
 ];
 
-const LEGAL = ["Privacy", "Terms", "Security"];
+const LEGAL: FooterLink[] = [
+  link("Privacy", "/privacy"),
+  link("Terms", "/terms"),
+  link("Security", "/#security"),
+];
 
 export default function Footer() {
   return (
@@ -85,12 +89,12 @@ export default function Footer() {
           </p>
           <ul className="flex items-center gap-6">
             {LEGAL.map((item) => (
-              <li key={item}>
+              <li key={item.label}>
                 <a
-                  href="#"
+                  href={item.href}
                   className="text-stat-label text-body transition-colors hover:text-ink"
                 >
-                  {item}
+                  {item.label}
                 </a>
               </li>
             ))}
