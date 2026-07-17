@@ -4,6 +4,12 @@ type FooterLink = { label: string; href: string };
 
 const link = (label: string, href = "#"): FooterLink => ({ label, href });
 
+/** Off-site links (e.g. the status page) open in a new tab. */
+const externalProps = (href: string) =>
+  href.startsWith("http")
+    ? { target: "_blank" as const, rel: "noopener noreferrer" }
+    : {};
+
 const COLUMNS = [
   {
     heading: "Products",
@@ -25,7 +31,7 @@ const COLUMNS = [
     links: [
       link("Documentation", "/docs"),
       link("API Reference", "/docs"),
-      link("Status"),
+      link("Status", "https://stats.uptimerobot.com/x0HhHO47C5"),
       link("Changelog"),
       link("SDKs", "/docs/sdk-flow"),
     ],
@@ -71,6 +77,7 @@ export default function Footer() {
                   <li key={item.label}>
                     <a
                       href={item.href}
+                      {...externalProps(item.href)}
                       className="text-small text-body transition-colors hover:text-ink"
                     >
                       {item.label}

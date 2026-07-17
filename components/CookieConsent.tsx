@@ -51,9 +51,12 @@ export default function CookieConsent() {
       role="dialog"
       aria-live="polite"
       aria-label="Cookie consent"
-      className="fixed inset-x-0 bottom-0 z-[80] p-4 md:bottom-5 md:left-5 md:right-auto md:w-[400px] md:p-0"
+      // The wrapper spans a wide area but is only a positioning frame — let
+      // clicks pass through it (so it never blocks footer links underneath);
+      // only the visible card captures pointer events.
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-[80] p-4 md:bottom-5 md:left-5 md:right-auto md:w-[400px] md:p-0"
     >
-      <div className="animate-fade-up rounded-panel border border-line bg-white/95 p-5 shadow-glass backdrop-blur-md motion-reduce:animate-none">
+      <div className="pointer-events-auto animate-fade-up rounded-panel border border-line bg-white/95 p-5 shadow-glass backdrop-blur-md motion-reduce:animate-none">
         <div className="flex items-start gap-3">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-brand/10 text-brand-accent">
             <CookieGlyph className="h-[18px] w-[18px]" />
