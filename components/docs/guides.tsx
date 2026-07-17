@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { BASES, SDKS } from "@/lib/docs/spec";
+import { SDKS } from "@/lib/docs/spec";
 import Callout from "./Callout";
 import CopyButton from "./CopyButton";
 import JsonPanel from "./JsonPanel";
@@ -152,13 +152,13 @@ function AuthenticationGuide() {
             <tbody className="divide-y divide-line text-body">
               <tr>
                 <td className="px-4 py-3 font-medium text-brand-accent">API key</td>
-                <td className="px-4 py-3">SDK identity checks (/sdk/*)</td>
+                <td className="px-4 py-3">API request, SDK or Libraries</td>
                 <td className="px-4 py-3 font-mono text-[12px]">Authorization: &lt;api_key&gt;</td>
               </tr>
               <tr>
-                <td className="px-4 py-3 font-medium text-[#175cd3] dark:text-[#8ab6ff]">Merchant token</td>
-                <td className="px-4 py-3">Dashboard, account &amp; CAC endpoints</td>
-                <td className="px-4 py-3 font-mono text-[12px]">Authorization: Bearer &lt;token&gt;</td>
+                <td className="px-4 py-3 font-medium text-[#175cd3] dark:text-[#8ab6ff]">Encryption Key</td>
+                <td className="px-4 py-3">API request, SDK or Libraries</td>
+                <td className="px-4 py-3 font-mono text-[12px]">&lt;hmac value&gt;</td>
               </tr>
             </tbody>
           </table>
@@ -187,48 +187,6 @@ function AuthenticationGuide() {
         <P>
           Merchant tokens come from <DocLink href="/docs/login">Log in</DocLink>. Send them as{" "}
           <Code>Authorization: Bearer &lt;token&gt;</Code> on every request to the merchant surface.
-        </P>
-      </section>
-    </GuideShell>
-  );
-}
-
-function EnvironmentsGuide() {
-  return (
-    <GuideShell
-      slug="environments"
-      eyebrow="Get started"
-      title="Base URLs"
-      lead="The API is served from one host with two bases: the merchant surface, and a dedicated base for SDK identity checks."
-    >
-      <section className="flex flex-col gap-4">
-        <H2>Bases</H2>
-        <div className="flex flex-col gap-3">
-          <div className="rounded-card border border-line bg-subtle/70 px-4 py-3">
-            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-body">
-              Merchant API
-            </p>
-            <code className="mt-1 block break-all font-mono text-[13px] text-ink">{BASES.api}</code>
-          </div>
-          <div className="rounded-card border border-line bg-subtle/70 px-4 py-3">
-            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-body">
-              SDK identity checks
-            </p>
-            <code className="mt-1 block break-all font-mono text-[13px] text-ink">{BASES.sdk}</code>
-          </div>
-        </div>
-        <P>
-          Requests and responses are JSON. Send <Code>Accept: application/json</Code> on every
-          call and <Code>Content-Type: application/json</Code> when there is a body.
-        </P>
-      </section>
-
-      <section className="flex flex-col gap-3">
-        <H2>Testing</H2>
-        <P>
-          Use the <DocLink href="/sandbox">sandbox</DocLink> to explore verification flows with
-          realistic data before pointing your integration at the live base URLs, and the
-          “Test this endpoint” panel on any reference page to preview request and response shapes.
         </P>
       </section>
     </GuideShell>
@@ -725,7 +683,6 @@ if (result.success) {
 
 const GUIDE_COMPONENTS: Record<string, () => JSX.Element> = {
   authentication: AuthenticationGuide,
-  environments: EnvironmentsGuide,
   errors: ErrorsGuide,
   webhooks: WebhooksGuide,
   "sdk-flow": SdkFlowGuide,

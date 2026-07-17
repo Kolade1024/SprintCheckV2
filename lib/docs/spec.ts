@@ -607,7 +607,6 @@ export const ENDPOINTS: Endpoint[] = [
 
 export const GUIDES: GuidePage[] = [
   { kind: "guide", slug: "authentication", name: "Authentication", summary: "API keys and merchant tokens — which endpoints need which credential." },
-  { kind: "guide", slug: "environments", name: "Base URLs", summary: "The API and SDK base URLs and how requests are structured." },
   { kind: "guide", slug: "errors", name: "Errors", summary: "The response envelope and the status codes the API returns." },
   { kind: "guide", slug: "webhooks", name: "Webhooks", summary: "Receive verification results on your server as they complete." },
   { kind: "guide", slug: "sdk-flow", name: "How the SDK works", summary: "The check → capture → result lifecycle behind every identity verification." },
@@ -674,7 +673,6 @@ export const NAV: NavSection[] = [
     items: [
       { slug: "", label: "Introduction" },
       item("authentication"),
-      item("environments"),
       item("errors"),
       item("webhooks"),
     ],

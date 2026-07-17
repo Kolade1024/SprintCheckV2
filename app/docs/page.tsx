@@ -39,7 +39,7 @@ const QUICKSTART = [
   },
   {
     title: "Start a check",
-    body: <>Call an SDK endpoint with the document number and your own identifier for the customer.</>,
+    body: <>Call an API endpoint with the document number and your own identifier for the customer.</>,
   },
   {
     title: "Receive the result",
