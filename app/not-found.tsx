@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import CursorGlow from "@/components/CursorGlow";
 import { ArrowRight, Search } from "@/components/icons";
 
 export const metadata: Metadata = {
@@ -14,7 +15,9 @@ export default function NotFound() {
     <>
       <Navbar />
 
-      <main className="flex min-h-screen items-center justify-center px-5 pt-32 pb-24">
+      <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-5 pt-32 pb-24">
+        <CursorGlow />
+
         <div className="flex flex-col items-center text-center">
           <span className="mb-7 flex h-16 w-16 animate-fade-up items-center justify-center rounded-full border border-line bg-white text-brand-accent shadow-glass [animation-delay:0ms] motion-reduce:animate-none">
             <Search className="h-7 w-7" />
