@@ -4,7 +4,7 @@ import MethodBadge from "@/components/docs/MethodBadge";
 import Pager from "@/components/docs/Pager";
 import { sampleFor, LANGS } from "@/lib/docs/codegen";
 import { ENDPOINTS, SDKS, getEndpoint } from "@/lib/docs/spec";
-import { ArrowRight, Fingerprint, Building } from "@/components/icons";
+import { ArrowRight, Fingerprint } from "@/components/icons";
 
 const SURFACES = [
   {
@@ -14,14 +14,6 @@ const SURFACES = [
     Icon: Fingerprint,
     chip: "bg-brand/10 text-brand-accent",
     count: ENDPOINTS.filter((e) => e.base === "sdk").length,
-  },
-  {
-    title: "Merchant API",
-    desc: "Account access and business verification — auth, password recovery and CAC lookups.",
-    href: "/docs/register",
-    Icon: Building,
-    chip: "bg-[#2e90fa]/10 text-[#175cd3] dark:bg-[#2e90fa]/15 dark:text-[#8ab6ff]",
-    count: ENDPOINTS.filter((e) => e.base === "api").length,
   },
 ];
 
@@ -166,7 +158,7 @@ export default function DocsIntroPage() {
           Popular endpoints
         </h2>
         <ul className="divide-y divide-line rounded-card border border-line">
-          {["bvn-check", "nin-check", "facial-check", "voters-check", "cac-name-search"].map((slug) => {
+          {["bvn-check", "nin-check", "facial-check", "voters-check"].map((slug) => {
             const ep = getEndpoint(slug)!;
             return (
               <li key={slug}>

@@ -17,7 +17,7 @@ const COLUMNS = [
       link("BVN Verification", "/docs/bvn-check"),
       link("NIN Verification", "/docs/nin-check"),
       link("KYC", "/docs/sdk-flow"),
-      link("KYB", "/docs/cac-name-search"),
+      link("KYB", "/docs"),
       link("Voter's Card", "/docs/voters-check"),
       link("Facial Check", "/docs/facial-check"),
     ],

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Menu, X } from "./icons";
+import { useSession } from "@/lib/client/useSession";
+import { AccountMenu, MobileAccount } from "./NavbarAccount";
 
 // Root-relative anchors (/#…) so section links work from any page, not just
 // the homepage — on /sandbox or /contact they navigate home, then scroll.
@@ -17,6 +19,7 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const session = useSession();
 
   return (
     <header className="fixed w-full top-0 z-50 pt-3 bg-transparent">
@@ -51,18 +54,24 @@ export default function Navbar() {
 
             {/* Desktop actions */}
             <div className="hidden items-center gap-2 lg:flex">
-              <a
-                href="/signin"
-                className="flex h-9 items-center justify-center rounded-btn px-4 text-small font-medium text-ink transition-colors hover:bg-black/5"
-              >
-                Sign in
-              </a>
-              <a
-                href="/sandbox"
-                className="flex h-9 items-center justify-center rounded-btn bg-brand px-4 text-small font-medium text-offwhite shadow-glow transition-transform hover:-translate-y-px"
-              >
-                Try sandbox
-              </a>
+              {session.status === "authed" ? (
+                <AccountMenu user={session.user} />
+              ) : (
+                <>
+                  <a
+                    href="/signin"
+                    className="flex h-9 items-center justify-center rounded-btn px-4 text-small font-medium text-ink transition-colors hover:bg-black/5"
+                  >
+                    Sign in
+                  </a>
+                  <a
+                    href="/sandbox"
+                    className="flex h-9 items-center justify-center rounded-btn bg-brand px-4 text-small font-medium text-offwhite shadow-glow transition-transform hover:-translate-y-px"
+                  >
+                    Try sandbox
+                  </a>
+                </>
+              )}
             </div>
 
             {/* Mobile hamburger */}
@@ -99,18 +108,24 @@ export default function Navbar() {
                 ))}
               </ul>
               <div className="mt-3 flex flex-col gap-2 border-t border-line pt-4">
-                <a
-                  href="/signin"
-                  className="flex h-11 items-center justify-center rounded-btn border border-line text-small font-medium text-ink"
-                >
-                  Sign in
-                </a>
-                <a
-                  href="/sandbox"
-                  className="flex h-11 items-center justify-center rounded-btn bg-brand text-small font-medium text-offwhite shadow-glow"
-                >
-                  Try sandbox
-                </a>
+                {session.status === "authed" ? (
+                  <MobileAccount user={session.user} onNavigate={() => setOpen(false)} />
+                ) : (
+                  <>
+                    <a
+                      href="/signin"
+                      className="flex h-11 items-center justify-center rounded-btn border border-line text-small font-medium text-ink"
+                    >
+                      Sign in
+                    </a>
+                    <a
+                      href="/sandbox"
+                      className="flex h-11 items-center justify-center rounded-btn bg-brand text-small font-medium text-offwhite shadow-glow"
+                    >
+                      Try sandbox
+                    </a>
+                  </>
+                )}
               </div>
             </div>
           </div>

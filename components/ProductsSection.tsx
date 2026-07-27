@@ -47,7 +47,7 @@ const PRODUCTS: Product[] = [
   {
     title: "Business Verification",
     description: "CAC lookups, directors, beneficial owners and compliance status.",
-    href: "/docs/cac-name-search",
+    href: "/docs",
     Icon: Building,
   },
 ];

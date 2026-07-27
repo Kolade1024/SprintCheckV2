@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { SDKS } from "@/lib/docs/spec";
@@ -136,7 +137,7 @@ function AuthenticationGuide() {
       slug="authentication"
       eyebrow="Get started"
       title="Authentication"
-      lead="SprintCheck has two credential types, one per API surface. Every request except registration, login and password recovery must carry one of them in the Authorization header."
+      lead="SprintCheck has two credential types, one for encryption and the other for authentication. Every request must carry each of them in the headers."
     >
       <section className="flex flex-col gap-4">
         <H2>Credential types</H2>
@@ -158,23 +159,21 @@ function AuthenticationGuide() {
               <tr>
                 <td className="px-4 py-3 font-medium text-[#175cd3] dark:text-[#8ab6ff]">Encryption Key</td>
                 <td className="px-4 py-3">API request, SDK or Libraries</td>
-                <td className="px-4 py-3 font-mono text-[12px]">&lt;hmac value&gt;</td>
+                <td className="px-4 py-3 font-mono text-[12px]">signature: &lt;hmac value&gt;</td>
               </tr>
             </tbody>
           </table>
         </div>
-        <P>
-          Every reference page shows which credential it needs as a chip next to the title, and the
-          sidebar sections carry a matching colour dot — purple for SDK, blue for merchant.
-        </P>
+
       </section>
 
       <section className="flex flex-col gap-3">
         <H2>API keys</H2>
         <P>
-          An API key and an encryption key are issued when your business account is created. Find
-          them under <DocLink href="/dashboard">Developers in your dashboard</DocLink>, where you
-          can also rotate them at any time.
+          An API key is issued when your business account is created — a test key for sandbox and a
+          live key for production. Find them under{" "}
+          <DocLink href="/dashboard">Developers in your dashboard</DocLink>, where you can also
+          rotate them at any time.
         </P>
         <Callout tone="warn">
           Keys are secrets. Keep them server-side, never ship them in mobile or browser code, and
@@ -183,11 +182,19 @@ function AuthenticationGuide() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <H2>Bearer tokens</H2>
+        <H2>Encryption key</H2>
         <P>
-          Merchant tokens come from <DocLink href="/docs/login">Log in</DocLink>. Send them as{" "}
-          <Code>Authorization: Bearer &lt;token&gt;</Code> on every request to the merchant surface.
+          Sign in to your SprintCheck dashboard and retrieve your unique encryption key. This key
+          must be kept secure and never exposed publicly.
         </P>
+        <P>
+          Before making an API call, compute the signature by hashing the request body with your
+          encryption key using HMAC-SHA512, then send the result as{" "}
+          <Code>signature: &lt;hmac value&gt;</Code> on every request.
+        </P>
+        <pre className="overflow-x-auto rounded-card border border-line bg-subtle/70 px-4 py-3 font-mono text-[12px] leading-relaxed text-ink">
+          <code>hash_hmac(&quot;SHA512&quot;, $payload, $ENCRYPTION_KEY)</code>
+        </pre>
       </section>
     </GuideShell>
   );
@@ -269,34 +276,108 @@ function WebhooksGuide() {
       lead="Identity checks complete asynchronously — the customer still has to pass the selfie capture. Register a webhook and SprintCheck posts the result to your server the moment each verification finishes."
     >
       <section className="flex flex-col gap-3">
-        <H2>Setup</H2>
         <P>
-          Set your webhook to a publicly reachable HTTPS endpoint under{" "}
-          <DocLink href="/dashboard">Developers in your dashboard</DocLink>. Respond with a 2xx
-          quickly and do any heavy work after acknowledging.
+          Webhooks allow you to receive real-time notifications about events happening in your
+          SprintCheck account. When a verification is processed, SprintCheck sends an HTTP POST
+          request to the URL you provide.
         </P>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <H2>Setting up Webhooks</H2>
+        <P>To start receiving webhook notifications, follow these steps:</P>
+        <ol className="flex flex-col gap-1.5 text-small leading-relaxed text-body">
+          <li>
+            1. Log in to your <strong className="font-semibold text-ink">SprintCheck Dashboard</strong>.
+          </li>
+          <li>
+            2. Navigate to its <strong className="font-semibold text-ink">Developer</strong> section.
+          </li>
+          <li>
+            3. Locate the <strong className="font-semibold text-ink">Webhook URL</strong> field.
+          </li>
+          <li>4. Enter your server's endpoint URL where you wish to receive the POST requests.</li>
+          <li>5. Save your changes.</li>
+        </ol>
+        <div className="overflow-hidden rounded-card border border-line shadow-card">
+          <Image
+            src="/docs/webhookSetup_blurred.png"
+            alt="Developers page in the SprintCheck dashboard, showing the Webhook URL field"
+            width={1280}
+            height={610}
+            className="w-full"
+          />
+        </div>
       </section>
 
       <section className="flex flex-col gap-4">
         <H2>Payload</H2>
         <P>
-          Each event carries the same fields the SDK submits on completion — match it back to your
-          records with <Code>identifier</Code> and <Code>reference</Code>.
+          Match the event back to your records with <Code>reference</Code> and{" "}
+          <Code>identifier</Code>. <Code>kyc_details</Code> varies by document type — BVN and NIN
+          shown below.
         </P>
         <JsonPanel
-          title="POST your-webhook-url · verification completed"
+          title="POST your-webhook-url · BVN VERIFICATION"
           json={JSON.stringify(
             {
-              event: "verification.completed",
-              data: {
-                type: "bvn",
-                reference: "36135803-0843-48d6-b8bf-5d47490a6ade",
-                identifier: "samji@email.com",
-                status: 1,
-                verified: true,
-                face_match: true,
-                confidence: "80",
-                completed_at: "2026-07-10T09:14:22Z",
+              schema_version: 1,
+              event: "verification",
+              event_type: "BVN VERIFICATION",
+              event_id: "1000000000000684746915906461696:2026-03-05T13:41:43+00:00",
+              occurred_at: "2026-03-05T13:41:43+00:00",
+              reference: "1000000000000684746915906461696",
+              number: "22454670613",
+              status: 1,
+              source: "SDK",
+              confidence: "80",
+              image:
+                "https://minio-5star-api.dev.5starcompany.com.ng/sprintcheck/db45cd89-e9a0-4190-8d0a-da6d1410c1c8.jpg",
+              identifier: "samjibaba_bvn",
+              kyc_details: {
+                bvn: "22454670613",
+                firstName: "SAMUEL",
+                middleName: "ADEKUNLE",
+                lastName: "ODEJINMI",
+                gender: "Male",
+                birthday: "1996-12-12",
+                photo: "/9j/I/1qD5fcelIDOiusmrYKuKylTawIzg96vQswHYikBLgpU8cxC4DGoiQw4qIybTjn8qYj//Z...........",
+                nameOnCard: "ODEJINMI SAMUEL ADEKUNLE",
+                phoneNumber: "08166939205",
+                phoneNumber2: "",
+              },
+            },
+            null,
+            2
+          )}
+          footnote="Representative example — field values are illustrative."
+        />
+        <JsonPanel
+          title="POST your-webhook-url · NIN VERIFICATION"
+          json={JSON.stringify(
+            {
+              schema_version: 1,
+              event: "verification",
+              event_type: "NIN VERIFICATION",
+              event_id: "1000000000000684741631255388160:2026-03-05T13:39:23+00:00",
+              occurred_at: "2026-03-05T13:39:23+00:00",
+              reference: "1000000000000684741631255388160",
+              number: "52306459347",
+              status: 1,
+              source: "API",
+              confidence: "90",
+              image:
+                "https://minio-5star-api.dev.5starcompany.com.ng/sprintcheck/8f097518-63f6-4af7-b816-d067f7a1517a.jpg",
+              identifier: "identifier_nin",
+              kyc_details: {
+                nin: "52306459347",
+                firstName: "SAMUEL",
+                middleName: "ADEKUNLE",
+                surname: "ODEJINMI",
+                gender: "Male",
+                birthDate: "1996-12-12",
+                photo: "/9j/4AAQSkZJRgABAgAAAQABAAD/2wBDAAgGBgcGBQgHBw.....",
+                telephoneNo: "08166939205",
               },
             },
             null,
@@ -335,8 +416,8 @@ function SdkFlowGuide() {
     },
     {
       title: "Receive the result",
-      body: "The outcome lands on your webhook as verification.completed, and appears in your verification history and dashboard immediately.",
-      tag: "Webhook · verification.completed",
+      body: "The outcome lands on your webhook as a verification event, and appears in your verification history and dashboard immediately.",
+      tag: "Webhook · event: verification",
     },
   ];
 

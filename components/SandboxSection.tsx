@@ -50,7 +50,7 @@ const ENDPOINTS: Endpoint[] = [
       { label: "Identifier", key: "identifier", sample: "dev@yourapp.com" },
     ],
     response: {
-      status: true,
+      success: 1,
       message: "BVN check initiated",
       data: {
         reference: "36135803-0843-48d6-b8bf-5d47490a6ade",
@@ -72,7 +72,7 @@ const ENDPOINTS: Endpoint[] = [
       { label: "Identifier", key: "identifier", sample: "dev@yourapp.com" },
     ],
     response: {
-      status: true,
+      success: 1,
       message: "NIN check initiated",
       data: {
         reference: "fab0f22b-2948-4c75-9b4d-0f59687d5138",
@@ -94,7 +94,7 @@ const ENDPOINTS: Endpoint[] = [
       { label: "Identifier", key: "identifier", sample: "dev@yourapp.com" },
     ],
     response: {
-      status: true,
+      success: 1,
       message: "Voter's card check initiated",
       data: {
         reference: "2d9621d1-576c-41a7-8879-83a563d194c8",
@@ -116,7 +116,7 @@ const ENDPOINTS: Endpoint[] = [
       { label: "Reference", key: "reference", sample: "order_8821" },
     ],
     response: {
-      status: true,
+      success: 1,
       message: "Facial check initiated",
       data: {
         reference: "order_8821",
@@ -134,6 +134,8 @@ const ENDPOINTS: Endpoint[] = [
     path: "/cac/name",
     auth: "bearer",
     fields: [{ label: "Business name", key: "name", sample: "5star" }],
+    // Merchant surface (bearer token) — envelope is `{ status: true, … }`,
+    // per the BFF upstream contract, not the SDK's `success: 1`.
     response: {
       status: true,
       message: "Search Successful",
@@ -198,10 +200,15 @@ function buildCurl(ep: Endpoint, values: Record<string, string>, apiKey: string)
   const body = ep.fields
     .map((f) => `    "${f.key}": "${values[f.key] || f.sample}"`)
     .join(",\n");
+  // Only the SDK surface (API-key auth) signs the body: HMAC-SHA512 of the
+  // whitespace-stripped body keyed with your encryption key, in the `signature`
+  // header. Merchant routes (bearer token) don't carry it.
+  const signatureHeader =
+    ep.auth === "apikey" ? `  -H "signature: <hmac_sha512_of_body>" \\\n` : "";
   return `curl -X ${ep.method} ${BASE_URLS[ep.base]}${ep.path} \\
   -H "Authorization: ${auth}" \\
   -H "Content-Type: application/json" \\
-  -d '{
+${signatureHeader}  -d '{
 ${body}
   }'`;
 }
