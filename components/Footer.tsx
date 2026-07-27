@@ -33,7 +33,7 @@ const COLUMNS = [
       link("API Reference", "/docs"),
       link("Status", "https://stats.uptimerobot.com/x0HhHO47C5"),
       link("Changelog"),
-      link("SDKs", "/docs/sdk-flow"),
+      link("SDKs", "/sdks"),
     ],
   },
   {
