@@ -5,7 +5,6 @@ import { SDKS } from "@/lib/docs/spec";
 import Callout from "./Callout";
 import CopyButton from "./CopyButton";
 import JsonPanel from "./JsonPanel";
-import MethodBadge from "./MethodBadge";
 import Pager from "./Pager";
 import { ExternalLink } from "@/components/icons";
 
@@ -211,18 +210,18 @@ function ErrorsGuide() {
       <section className="flex flex-col gap-4">
         <H2>The envelope</H2>
         <P>
-          <Code>status</Code> is <Code>true</Code> when the call succeeded and <Code>false</Code>{" "}
+          <Code>success</Code> is <Code>1</Code> when the call succeeded and <Code>0</Code>{" "}
           otherwise, <Code>message</Code> is human-readable, and <Code>data</Code> carries the
-          payload (or validation details on errors).
+          payload (an empty object on errors).
         </P>
         <JsonPanel
           tone="error"
-          title="Error · 422"
+          title="Error · 400"
           json={JSON.stringify(
             {
-              status: false,
-              message: "The number field is required.",
-              data: { errors: { number: ["The number field is required."] } },
+              success: 0,
+              message: "Invalid BVN number provided",
+              data: {},
             },
             null,
             2
@@ -249,7 +248,7 @@ function ErrorsGuide() {
                 ["401", "Unauthorized", "The credential is missing, wrong or revoked."],
                 ["402", "Insufficient balance", "Top up the wallet before retrying."],
                 ["404", "Not found", "The resource or route does not exist."],
-                ["422", "Validation failed", "Fix the fields listed in data.errors."],
+                ["422", "Validation failed", "Fix the invalid or missing fields and retry."],
                 ["429", "Too many requests", "Back off and retry with exponential delay."],
                 ["500", "Server error", "Safe to retry; contact support if it persists."],
               ].map(([code, label, action]) => (
@@ -273,7 +272,7 @@ function WebhooksGuide() {
       slug="webhooks"
       eyebrow="Get started"
       title="Webhooks"
-      lead="Identity checks complete asynchronously — the customer still has to pass the selfie capture. Register a webhook and SprintCheck posts the result to your server the moment each verification finishes."
+      lead="Register a webhook and SprintCheck posts each verification result to your server the moment it completes — whether it came through the API directly or a client SDK."
     >
       <section className="flex flex-col gap-3">
         <P>
@@ -398,25 +397,23 @@ function WebhooksGuide() {
 function SdkFlowGuide() {
   const steps = [
     {
-      title: "Start the check",
-      body: "Your server calls the check endpoint with the document number and your identifier. SprintCheck returns a pending verification with a reference.",
-      method: "POST" as const,
-      tag: "/sdk/bvn · /sdk/nin · /sdk/voters · /sdk/facial",
+      title: "Initialize the SDK",
+      body: "Add the SprintCheck SDK to your app and initialize it once with your API key and encryption key. The SDK signs and calls the verification API for you — your keys never sit in request code you write.",
+      tag: "Android · Flutter · React Native · Expo",
     },
     {
-      title: "Capture the customer",
-      body: "Launch the SprintCheck SDK in your app with the same identifier. It guides the customer through a liveness-checked selfie capture.",
-      tag: "SprintCheck SDK · mobile or web",
+      title: "Launch a verification",
+      body: "Call the SDK's start-verification method with a type — BVN, NIN or facial — and the customer's identifier. The SDK opens its own screen and takes over the flow.",
+      tag: "type: bvn · nin · facial",
     },
     {
-      title: "The capture completes the check",
-      body: "The SDK submits the selfie, liveness confidence and reference. SprintCheck matches the face against the document photo and finalises the result.",
-      method: "PUT" as const,
-      tag: "/sdk/bvn · /sdk/nin · /sdk/voters · /sdk/facial",
+      title: "The SDK captures and verifies",
+      body: "The customer completes document input and a liveness-checked selfie in-app. The SDK matches the face against the document photo and returns the outcome to your callback with a confidence score.",
+      tag: "In-app capture · liveness · face match",
     },
     {
       title: "Receive the result",
-      body: "The outcome lands on your webhook as a verification event, and appears in your verification history and dashboard immediately.",
+      body: "The same outcome is also posted to your webhook as a verification event (source: SDK), and appears in your verification history and dashboard immediately.",
       tag: "Webhook · event: verification",
     },
   ];
@@ -424,9 +421,9 @@ function SdkFlowGuide() {
   return (
     <GuideShell
       slug="sdk-flow"
-      eyebrow="SDK · Identity checks"
-      title="How the SDK works"
-      lead="Every identity check is a two-step handshake: your server starts it, the SprintCheck SDK finishes it with a face capture. Here is the full lifecycle."
+      eyebrow="Client SDKs"
+      title="How the SDKs work"
+      lead="The client SDKs run a liveness-checked capture flow inside your app and report the result to your callback and your webhook. Here is the full lifecycle."
     >
       <ol className="flex flex-col">
         {steps.map((s, i) => (
@@ -440,7 +437,6 @@ function SdkFlowGuide() {
             <div className="min-w-0 pt-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="text-base font-semibold text-ink">{s.title}</h3>
-                {s.method ? <MethodBadge method={s.method} size="sm" /> : null}
               </div>
               <p className="mt-1 text-small leading-relaxed text-body">{s.body}</p>
               <p className="mt-1.5 font-mono text-[11px] text-body/70">{s.tag}</p>
@@ -457,14 +453,13 @@ function SdkFlowGuide() {
       <section className="flex flex-col gap-3">
         <H2>Where to next</H2>
         <P>
-          Start with <DocLink href="/docs/bvn-check">Start a BVN check</DocLink>, then wire up{" "}
-          <DocLink href="/docs/webhooks">webhooks</DocLink> to receive results. For returning
-          customers, <DocLink href="/docs/facial-check">facial re-verification</DocLink> skips the
-          document number entirely. The capture step ships as ready-made libraries for{" "}
-          <DocLink href="/docs/android-sdk">Android</DocLink>,{" "}
+          Install the SDK for your platform — <DocLink href="/docs/android-sdk">Android</DocLink>,{" "}
           <DocLink href="/docs/flutter-sdk">Flutter</DocLink>,{" "}
-          <DocLink href="/docs/react-native-sdk">React Native</DocLink> and{" "}
-          <DocLink href="/docs/expo-sdk">Expo</DocLink>.
+          <DocLink href="/docs/react-native-sdk">React Native</DocLink> or{" "}
+          <DocLink href="/docs/expo-sdk">Expo</DocLink> — then wire up{" "}
+          <DocLink href="/docs/webhooks">webhooks</DocLink> to receive the result on your server.
+          Prefer server-to-server? Call <DocLink href="/docs/bvn-check">Verify BVN</DocLink> and the
+          other identity endpoints directly.
         </P>
       </section>
     </GuideShell>
@@ -479,7 +474,7 @@ function AndroidSdkGuide() {
   return (
     <GuideShell
       slug="android-sdk"
-      eyebrow="SDK · Libraries"
+      eyebrow="Client SDKs"
       title="Android SDK"
       lead="A native Kotlin library that runs the full verification flow — document input, selfie capture, liveness — inside your Android app. Distributed through JitPack."
       meta={<SdkMeta slug="android-sdk" />}
@@ -567,7 +562,7 @@ function FlutterSdkGuide() {
   return (
     <GuideShell
       slug="flutter-sdk"
-      eyebrow="SDK · Libraries"
+      eyebrow="Client SDKs"
       title="Flutter SDK"
       lead="The sprint_check plugin runs BVN and NIN verification with photo capture, face detection and liveness checking. Supports Android, iOS, Web, Linux, macOS and Windows."
       meta={<SdkMeta slug="flutter-sdk" />}
@@ -639,7 +634,7 @@ function ReactNativeSdkGuide() {
   return (
     <GuideShell
       slug="react-native-sdk"
-      eyebrow="SDK · Libraries"
+      eyebrow="Client SDKs"
       title="React Native SDK"
       lead="sprintcheckrn wraps the native Android and iOS verification flows behind a promise-based JavaScript API — BVN, NIN and facial verification."
       meta={<SdkMeta slug="react-native-sdk" />}
@@ -703,7 +698,7 @@ function ExpoSdkGuide() {
   return (
     <GuideShell
       slug="expo-sdk"
-      eyebrow="SDK · Libraries"
+      eyebrow="Client SDKs"
       title="Expo SDK"
       lead="sprintcheck-expo brings the same BVN, NIN and facial flows to Expo projects, with TypeScript types included. Works with managed and bare workflows."
       meta={<SdkMeta slug="expo-sdk" />}

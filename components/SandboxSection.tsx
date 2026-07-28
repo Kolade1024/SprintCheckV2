@@ -25,7 +25,7 @@ type Endpoint = {
   label: string;
   method: string;
   /** Which API surface the endpoint lives on — mirrors the docs. */
-  base: "api" | "sdk";
+  base: keyof typeof BASE_URLS;
   path: string;
   /** SDK checks send the raw API key; merchant endpoints send a bearer token. */
   auth: "apikey" | "bearer";
@@ -40,9 +40,9 @@ type Endpoint = {
  */
 const ENDPOINTS: Endpoint[] = [
   {
-    label: "BVN Check",
+    label: "Verify BVN",
     method: "POST",
-    base: "sdk",
+    base: "api",
     path: "/bvn",
     auth: "apikey",
     fields: [
@@ -51,20 +51,24 @@ const ENDPOINTS: Endpoint[] = [
     ],
     response: {
       success: 1,
-      message: "BVN check initiated",
+      message: "Verified Successfully",
       data: {
-        reference: "36135803-0843-48d6-b8bf-5d47490a6ade",
-        identifier: "dev@yourapp.com",
-        type: "bvn",
-        status: "pending",
-        fee: 50,
+        firstName: "SA*****",
+        lastName: "OD*****",
+        middleName: "AD*****",
+        dateOfBirth: "12-Dec-1996",
+        phoneNumber1: "0816*******",
+        gender: "Male",
+        stateOfOrigin: "Osun State",
+        bvn: "2245********",
+        base64Image: "/9j/4AAQSkZJRgABAQEAYABgAAD...",
       },
     },
   },
   {
-    label: "NIN Check",
+    label: "Verify NIN",
     method: "POST",
-    base: "sdk",
+    base: "api",
     path: "/nin",
     auth: "apikey",
     fields: [
@@ -73,20 +77,24 @@ const ENDPOINTS: Endpoint[] = [
     ],
     response: {
       success: 1,
-      message: "NIN check initiated",
+      message: "Verified Successfully",
       data: {
-        reference: "fab0f22b-2948-4c75-9b4d-0f59687d5138",
-        identifier: "dev@yourapp.com",
-        type: "nin",
-        status: "pending",
-        fee: 50,
+        firstname: "SA*****",
+        middlename: "AD*****",
+        surname: "OD*****",
+        telephoneno: "0816*******",
+        nin: "5230********",
+        gender: "m",
+        birthdate: "12-12-1996",
+        state_of_origin: "Osun",
+        photo: "/9j/4AAQSkZJRgABAQEAYABgAAD...",
       },
     },
   },
   {
-    label: "Voter's Card Check",
+    label: "Verify Voter's Card",
     method: "POST",
-    base: "sdk",
+    base: "api",
     path: "/voters",
     auth: "apikey",
     fields: [
@@ -95,35 +103,43 @@ const ENDPOINTS: Endpoint[] = [
     ],
     response: {
       success: 1,
-      message: "Voter's card check initiated",
+      message: "Verified Successfully",
       data: {
-        reference: "2d9621d1-576c-41a7-8879-83a563d194c8",
-        identifier: "dev@yourapp.com",
-        type: "voters",
-        status: "pending",
-        fee: 50,
+        fullName: "Bl****** Aanuoluwapo Afolabi",
+        gender: "F",
+        occupation: "STUDENT",
+        state: "OYO",
+        lga: "IBADAN NORTH EAST",
+        address: "E7/1207 YI**, IBADAN, IBADAN NORTH EAST, OYO",
+        vin: "90F5A***************",
+        country: "NG",
+        photo: "/9j/4AAQSkZJRgABAQEAYABgAAD...",
       },
     },
   },
   {
-    label: "Facial Check",
+    label: "Face Detection",
     method: "POST",
-    base: "sdk",
-    path: "/facial",
+    base: "api",
+    path: "/face",
     auth: "apikey",
     fields: [
-      { label: "Identifier (from a previous check)", key: "identifier", sample: "dev@yourapp.com" },
-      { label: "Reference", key: "reference", sample: "order_8821" },
+      { label: "Image (Base64)", key: "image", sample: "base64_encoded_image" },
     ],
     response: {
       success: 1,
-      message: "Facial check initiated",
+      message: "Face Detected Successfully",
       data: {
-        reference: "order_8821",
-        identifier: "dev@yourapp.com",
-        type: "facial",
-        status: "pending",
-        fee: 30,
+        face_locations: [
+          {
+            age: 31,
+            dominant_race: "black",
+            dominant_gender: "Man",
+            dominant_emotion: "happy",
+            face_confidence: 0.99,
+          },
+        ],
+        faces_detected: 1,
       },
     },
   },
@@ -167,7 +183,6 @@ const API_KEY = "scb_sandbox_demo_xxxxxxxxxxxxxxxx";
 /* Same bases as the API reference — merchant surface and SDK identity checks. */
 const BASE_URLS = {
   api: "https://api.sprintcheck.megasprintlimited.com.ng/api/v1",
-  sdk: "https://api.sprintcheck.megasprintlimited.com.ng/api/sdk",
 } as const;
 
 const FEATURES: {

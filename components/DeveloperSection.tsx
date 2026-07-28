@@ -51,7 +51,7 @@ function CodeWindow() {
           <code>
             <C>{"// Start a BVN check"}</C>
             {"\n"}
-            <K>const</K> res = <K>await</K> <F>fetch</F>(<S>{'"https://api.sprintcheck.megasprintlimited.com.ng/api/sdk/bvn"'}</S>, {"{"}
+            <K>const</K> res = <K>await</K> <F>fetch</F>(<S>{'"https://api.sprintcheck.megasprintlimited.com.ng/api/v1/bvn"'}</S>, {"{"}
             {"\n"}
             {"  "}method: <S>{'"POST"'}</S>,
             {"\n"}
@@ -69,9 +69,9 @@ function CodeWindow() {
             {"\n\n"}
             <K>const</K> data = <K>await</K> res.<F>json</F>();
             {"\n"}
-            <C>{'// { status: true, message: "BVN check initiated",'}</C>
+            <C>{'// { success: 1, message: "Verified Successfully",'}</C>
             {"\n"}
-            <C>{'//   data: { reference: "36135803-…", status: "pending", fee: 50 } }'}</C>
+            <C>{'//   data: { firstName: "SA*****", bvn: "2245********", … } }'}</C>
           </code>
         </pre>
       </div>

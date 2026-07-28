@@ -4,16 +4,26 @@ import MethodBadge from "@/components/docs/MethodBadge";
 import Pager from "@/components/docs/Pager";
 import { sampleFor, LANGS } from "@/lib/docs/codegen";
 import { ENDPOINTS, SDKS, getEndpoint } from "@/lib/docs/spec";
-import { ArrowRight, Fingerprint } from "@/components/icons";
+import { ArrowRight, Fingerprint, ScanFace } from "@/components/icons";
+
+const isFacial = (e: (typeof ENDPOINTS)[number]) => /face|compare/.test(e.path);
 
 const SURFACES = [
   {
-    title: "SDK · Identity checks",
-    desc: "Verify BVN, NIN and voter's cards with a liveness-checked selfie, or re-verify a returning face.",
-    href: "/docs/sdk-flow",
+    title: "Identity verification",
+    desc: "Verify BVN, NIN and voter's cards against the source registries — one POST per check, full identity data back.",
+    href: "/docs/bvn-check",
     Icon: Fingerprint,
     chip: "bg-brand/10 text-brand-accent",
-    count: ENDPOINTS.filter((e) => e.base === "sdk").length,
+    count: ENDPOINTS.filter((e) => !isFacial(e)).length,
+  },
+  {
+    title: "Facial verification",
+    desc: "Detect faces, check liveness, and compare two images to confirm they belong to the same person.",
+    href: "/docs/facial-check",
+    Icon: ScanFace,
+    chip: "bg-brand/10 text-brand-accent",
+    count: ENDPOINTS.filter(isFacial).length,
   },
 ];
 
@@ -30,14 +40,15 @@ const QUICKSTART = [
     ),
   },
   {
-    title: "Start a check",
-    body: <>Call an API endpoint with the document number and your own identifier for the customer.</>,
+    title: "Verify a customer",
+    body: <>Call a verification endpoint with the document number and your own identifier for the customer.</>,
   },
   {
     title: "Receive the result",
     body: (
       <>
-        The customer completes the selfie capture in the SDK, and the outcome lands on your{" "}
+        The verified identity comes straight back in the response, and a verification event is also
+        posted to your{" "}
         <Link href="/docs/webhooks" className="font-medium text-brand-accent underline-offset-2 hover:underline">
           webhook
         </Link>
@@ -61,9 +72,8 @@ export default function DocsIntroPage() {
           Verify identity and customer data <span className="text-gradient">in seconds</span>
         </h1>
         <p className="mt-4 max-w-prose text-lead text-body">
-          One REST API for BVN, NIN, voter's card and facial verification, plus CAC business
-          lookups. Predictable JSON, a consistent response envelope, and webhooks for every
-          completed check.
+          One REST API for BVN, NIN, voter's card and face verification. Predictable JSON, a
+          consistent response envelope, and webhooks for every completed check.
         </p>
       </header>
 
@@ -103,7 +113,7 @@ export default function DocsIntroPage() {
       {/* Surfaces */}
       <section aria-label="API surfaces" className="mb-12">
         <h2 className="mb-4 border-b border-line pb-2 font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-body">
-          Two surfaces, one host
+          Ways to verify
         </h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {SURFACES.map(({ title, desc, href, Icon, chip, count }) => (
