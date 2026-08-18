@@ -3,7 +3,9 @@ import {
   mapAuditLogEntry,
   mapCacBusinessMatch,
   mapCountry,
+  mapDailyStat,
   mapDashboardSummary,
+  mapPageMeta,
   mapPricingService,
   mapRegeneratedKeys,
   mapTeamMember,
@@ -11,19 +13,30 @@ import {
   mapVirtualAccount,
   mapWalletTransaction,
 } from "@/lib/server/mappers";
-import { upstream, upstreamAllPages, UpstreamError } from "@/lib/server/upstream";
+import {
+  queryString,
+  upstream,
+  upstreamAllPages,
+  upstreamList,
+  UpstreamError,
+} from "@/lib/server/upstream";
 import type {
-  AuditLogEntry,
+  AcceptInvitePayload,
+  AuditLogPage,
+  AuditLogQuery,
+  AuditSeverity,
   CacBusinessMatch,
   CacRecord,
   ChangePasswordPayload,
   Country,
+  DailyVerificationStat,
   DashboardSummary,
   InviteTeamMemberPayload,
   MessageResponse,
   PricingService,
   RegeneratedKeys,
   TeamMember,
+  TeamRole,
   UpdateBusinessPayload,
   UpdateProfilePayload,
   VerificationLog,
@@ -46,10 +59,13 @@ export async function getDashboard(token: string): Promise<DashboardSummary> {
   return mapDashboardSummary(res.data ?? {});
 }
 
-/** Raw monthly series from upstream — shape is passed through untouched. */
-export async function getDashboardStats(token: string): Promise<unknown> {
-  const res = await upstream<{ data?: unknown }>("/dashboard/stats", { auth: bearer(token) });
-  return res.data ?? [];
+/**
+ * Daily successful/failed counts. Upstream only returns the last 8 days, so
+ * this can back the chart's 7-day view but not its longer ranges.
+ */
+export async function getDashboardStats(token: string): Promise<DailyVerificationStat[]> {
+  const res = await upstream<{ data?: Raw[] }>("/dashboard/stats", { auth: bearer(token) });
+  return (res.data ?? []).map(mapDailyStat);
 }
 
 export async function getHistory(token: string): Promise<VerificationLog[]> {
@@ -218,43 +234,41 @@ export async function cacTinSearch(token: string, number: unknown): Promise<CacR
   return res.data ?? {};
 }
 
-/* -------------------------------------------------------- audit log / team */
+/* -------------------------------------------------------------- audit log */
+
+const AUDIT_SEVERITIES: AuditSeverity[] = ["info", "warning", "critical"];
 
 /**
- * Upstream paths for the audit-log and team features. The Postman collection
- * in this repo does not include the "Merchant > Verification" folder yet, and
- * the live API 404s on the obvious candidates — these are the expected paths,
- * kept in one place so re-wiring against the real export is a one-line edit.
+ * Filtering and paging happen upstream — the API validates `severity` and
+ * `action` and 422s on unknown values, so only recognised filters are
+ * forwarded and the rest are dropped rather than rejected here.
  */
-const AUDIT_LOGS_PATH = "/audit-logs";
+export async function getAuditLogs(token: string, query: AuditLogQuery): Promise<AuditLogPage> {
+  const severity = AUDIT_SEVERITIES.find((s) => s === query.severity);
+  const path = `/audit-logs${queryString({
+    severity,
+    action: query.action?.trim(),
+    actor: query.actor?.trim(),
+    from: query.from,
+    to: query.to,
+    search: query.search?.trim(),
+    per_page: query.perPage,
+    page: query.page,
+  })}`;
+
+  const { rows, meta } = await upstreamList<Raw>(path, bearer(token));
+  const entries = rows.map(mapAuditLogEntry);
+  return { entries, meta: mapPageMeta(meta, entries.length) };
+}
+
+/* ------------------------------------------------------------------- team */
+
 const TEAM_PATH = "/team";
-
-function missingUpstream(feature: string, error: unknown): never {
-  if (error instanceof UpstreamError && error.status === 404) {
-    throw new UpstreamError(
-      `The ${feature} API isn't live yet — this screen will light up as soon as the backend ships it.`,
-      501,
-    );
-  }
-  throw error;
-}
-
-export async function getAuditLogs(token: string): Promise<AuditLogEntry[]> {
-  try {
-    const rows = await upstreamAllPages<Raw>(AUDIT_LOGS_PATH, bearer(token));
-    return rows.map(mapAuditLogEntry);
-  } catch (error) {
-    missingUpstream("audit log", error);
-  }
-}
+const INVITE_ROLES: TeamRole[] = ["admin", "finance", "viewer"];
 
 export async function getTeam(token: string): Promise<TeamMember[]> {
-  try {
-    const res = await upstream<{ data?: Raw[] }>(TEAM_PATH, { auth: bearer(token) });
-    return (res.data ?? []).map(mapTeamMember);
-  } catch (error) {
-    missingUpstream("team", error);
-  }
+  const res = await upstream<{ data?: Raw[] }>(TEAM_PATH, { auth: bearer(token) });
+  return (res.data ?? []).map(mapTeamMember);
 }
 
 export async function inviteTeamMember(
@@ -265,16 +279,51 @@ export async function inviteTeamMember(
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new UpstreamError("Enter a valid email address.", 422);
   }
-  try {
-    const res = await upstream<{ message?: string }>(TEAM_PATH, {
-      method: "POST",
-      auth: bearer(token),
-      body: { email, role: payload.role },
-    });
-    return { message: res.message ?? "Invitation sent" };
-  } catch (error) {
-    missingUpstream("team", error);
+  // Upstream validates the role case-sensitively against admin|finance|viewer.
+  const role = INVITE_ROLES.find((r) => r === payload.role?.toLowerCase());
+  if (!role) {
+    throw new UpstreamError("Choose a role for this teammate.", 422);
   }
+  const res = await upstream<{ message?: string }>(`${TEAM_PATH}/invite`, {
+    method: "POST",
+    auth: bearer(token),
+    body: { email, role },
+  });
+  return { message: res.message ?? "Invitation sent" };
+}
+
+/**
+ * Public: completes an invited teammate's signup from the emailed token. No
+ * session exists yet, so this goes out with the ApiKey like the /auth routes.
+ */
+export async function acceptTeamInvite(payload: AcceptInvitePayload): Promise<MessageResponse> {
+  const requireField = (value: unknown, message: string): string => {
+    const s = typeof value === "string" ? value.trim() : "";
+    if (!s) throw new UpstreamError(message, 422);
+    return s;
+  };
+
+  const password = typeof payload.password === "string" ? payload.password : "";
+  if (password.length < 6) {
+    throw new UpstreamError("Password must be at least 6 characters.", 422);
+  }
+  if (password !== payload.password_confirmation) {
+    throw new UpstreamError("Passwords do not match.", 422);
+  }
+
+  const res = await upstream<{ message?: string }>(`${TEAM_PATH}/invite/accept`, {
+    method: "POST",
+    auth: { kind: "apiKey" },
+    body: {
+      token: requireField(payload.token, "This invite link is missing its token."),
+      name: requireField(payload.name, "Your name is required."),
+      phone_number: requireField(payload.phone_number, "Phone number is required."),
+      password,
+      // Undocumented in Swagger but required by the API.
+      password_confirmation: password,
+    },
+  });
+  return { message: res.message ?? "Invitation accepted. You can now log in." };
 }
 
 export async function removeTeamMember(
@@ -282,15 +331,11 @@ export async function removeTeamMember(
   memberId: string,
 ): Promise<MessageResponse> {
   if (!memberId) throw new UpstreamError("Member id is required.", 422);
-  try {
-    const res = await upstream<{ message?: string }>(
-      `${TEAM_PATH}/${encodeURIComponent(memberId)}`,
-      { method: "DELETE", auth: bearer(token) },
-    );
-    return { message: res.message ?? "Member removed" };
-  } catch (error) {
-    missingUpstream("team", error);
-  }
+  const res = await upstream<{ message?: string }>(
+    `${TEAM_PATH}/${encodeURIComponent(memberId)}`,
+    { method: "DELETE", auth: bearer(token) },
+  );
+  return { message: res.message ?? "Member removed" };
 }
 
 export async function changePassword(

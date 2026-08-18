@@ -1,14 +1,21 @@
 import { request } from "./http";
 import type {
-  AuditLogEntry,
+  AccountDetails,
+  AcceptInvitePayload,
+  AuditLogPage,
+  AuditLogQuery,
   CacBusinessMatch,
   CacRecord,
   ChangePasswordPayload,
   Country,
+  DailyVerificationStat,
   DashboardSummary,
+  FundingFee,
   InviteTeamMemberPayload,
   LoginPayload,
+  LoginResponse,
   MessageResponse,
+  NotificationPage,
   PricingService,
   RegeneratedKeys,
   SignupPayload,
@@ -27,8 +34,16 @@ import type {
  */
 
 export const authApi = {
+  /** Resolves with `twoFactorRequired` when the account needs a code first. */
   login: (payload: LoginPayload) =>
-    request<MessageResponse>("/auth/login", { method: "POST", body: payload }),
+    request<LoginResponse>("/auth/login", { method: "POST", body: payload }),
+
+  /** Second login step — trades the emailed code for a session. */
+  verifyLoginCode: (email: string, code: string, remember = false) =>
+    request<MessageResponse>("/auth/two-factor", {
+      method: "POST",
+      body: { email, code, remember },
+    }),
 
   signup: (payload: SignupPayload) =>
     request<MessageResponse>("/auth/signup", { method: "POST", body: payload }),
@@ -45,13 +60,35 @@ export const authApi = {
       body: { email, code, password },
     }),
 
+  /** Public — completes an invited teammate's signup from the emailed token. */
+  acceptTeamInvite: (payload: AcceptInvitePayload) =>
+    request<MessageResponse>("/team/invite/accept", { method: "POST", body: payload }),
+
   logout: () => request<MessageResponse>("/auth/logout", { method: "POST" }),
 };
+
+function auditLogQuery(query: AuditLogQuery): string {
+  const params = new URLSearchParams();
+  const set = (key: string, value: string | number | undefined) => {
+    if (value !== undefined && value !== "") params.set(key, String(value));
+  };
+  set("severity", query.severity || undefined);
+  set("action", query.action);
+  set("actor", query.actor);
+  set("from", query.from);
+  set("to", query.to);
+  set("search", query.search);
+  set("per_page", query.perPage);
+  set("page", query.page);
+  const search = params.toString();
+  return search ? `?${search}` : "";
+}
 
 export const appApi = {
   dashboard: (signal?: AbortSignal) => request<DashboardSummary>("/dashboard", { signal }),
 
-  dashboardStats: (signal?: AbortSignal) => request<unknown>("/dashboard/stats", { signal }),
+  dashboardStats: (signal?: AbortSignal) =>
+    request<DailyVerificationStat[]>("/dashboard/stats", { signal }),
 
   history: (signal?: AbortSignal) => request<VerificationLog[]>("/history", { signal }),
 
@@ -82,12 +119,65 @@ export const appApi = {
   changePassword: (payload: ChangePasswordPayload) =>
     request<MessageResponse>("/change-password", { method: "PUT", body: payload }),
 
-  auditLogs: (signal?: AbortSignal) => request<AuditLogEntry[]>("/audit-logs", { signal }),
+  /* ------------------------------------------------------------- account */
+
+  account: (signal?: AbortSignal) => request<AccountDetails>("/account", { signal }),
+
+  fundingFee: (signal?: AbortSignal) => request<FundingFee>("/wallet/funding-fee", { signal }),
+
+  enableTwoFactor: () =>
+    request<MessageResponse>("/account/two-factor/enable", { method: "POST" }),
+
+  verifyTwoFactor: (code: string) =>
+    request<MessageResponse>("/account/two-factor/verify", { method: "POST", body: { code } }),
+
+  resendTwoFactorCode: () =>
+    request<MessageResponse>("/account/two-factor/resend", { method: "POST" }),
+
+  disableTwoFactor: (code: string) =>
+    request<MessageResponse>("/account/two-factor/disable", { method: "POST", body: { code } }),
+
+  uploadProfilePhoto: (file: File) => {
+    const form = new FormData();
+    form.append("image", file);
+    return request<MessageResponse & { profilePhotoUrl: string | null }>(
+      "/account/profile-photo",
+      { method: "POST", body: form },
+    );
+  },
+
+  removeProfilePhoto: () =>
+    request<MessageResponse>("/account/profile-photo", { method: "DELETE" }),
+
+  requestAccountDeletion: (password: string) =>
+    request<MessageResponse & { deletionScheduledAt: string | null }>(
+      "/account/deletion-request",
+      { method: "POST", body: { password } },
+    ),
+
+  cancelAccountDeletion: () =>
+    request<MessageResponse>("/account/deletion-request", { method: "DELETE" }),
+
+  /* ------------------------------------------------------- notifications */
+
+  notifications: (page = 1, signal?: AbortSignal) =>
+    request<NotificationPage>(`/notifications?page=${page}`, { signal }),
+
+  markNotificationsRead: (ids: string[]) =>
+    request<MessageResponse>("/notifications/read", { method: "POST", body: { ids } }),
+
+  markAllNotificationsRead: () =>
+    request<MessageResponse>("/notifications/read-all", { method: "POST" }),
+
+  /* ------------------------------------------------------ audit log/team */
+
+  auditLogs: (query: AuditLogQuery = {}, signal?: AbortSignal) =>
+    request<AuditLogPage>(`/audit-logs${auditLogQuery(query)}`, { signal }),
 
   team: (signal?: AbortSignal) => request<TeamMember[]>("/team", { signal }),
 
   inviteTeamMember: (payload: InviteTeamMemberPayload) =>
-    request<MessageResponse>("/team", { method: "POST", body: payload }),
+    request<MessageResponse>("/team/invite", { method: "POST", body: payload }),
 
   removeTeamMember: (memberId: string | number) =>
     request<MessageResponse>(`/team/${encodeURIComponent(String(memberId))}`, {

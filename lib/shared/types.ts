@@ -97,6 +97,88 @@ export interface Country {
   name: string;
 }
 
+/** One row of GET /dashboard/stats — the API returns the last 8 days only. */
+export interface DailyVerificationStat {
+  /** `YYYY-MM-DD`. */
+  date: string;
+  successful: number;
+  failed: number;
+}
+
+/* --------------------------------------------------------------- account */
+
+/** Upstream reports `two_factor_status` as off | pending | on. */
+export type TwoFactorStatus = "off" | "pending" | "on";
+
+/** `none` until a deletion is scheduled, then `pending` through the grace period. */
+export type DeletionStatus = "none" | "pending";
+
+export interface AccountBusiness {
+  id: number;
+  name: string;
+  walletBalance: number;
+  confidenceLevel: string | null;
+}
+
+/**
+ * GET /account — everything the settings screens need in one call: role, 2FA
+ * state, photo, unread badge, funding fee and the business summary. Distinct
+ * from `DashboardSummary`, which carries wallet/virtual-account/API-call stats.
+ */
+export interface AccountDetails {
+  id: number;
+  name: string;
+  email: string;
+  phoneNumber: string | null;
+  role: string;
+  roleLabel: string;
+  status: string;
+  twoFactorEnabled: boolean;
+  twoFactorStatus: TwoFactorStatus;
+  deletionStatus: DeletionStatus;
+  deletionScheduledAt: string | null;
+  /**
+   * Presigned object-storage URL that expires after an hour — always render
+   * the value from a fresh /account load rather than persisting it.
+   */
+  profilePhotoUrl: string | null;
+  unreadNotifications: number;
+  fundingFee: number;
+  business: AccountBusiness | null;
+}
+
+export interface FundingFee {
+  fee: number;
+  currency: string;
+}
+
+/* ---------------------------------------------------------- notifications */
+
+export interface AppNotification {
+  id: string;
+  /** Machine code, e.g. "api_keys_regenerated". */
+  type: string;
+  title: string;
+  body: string;
+  /** Matching audit action, e.g. "api_keys.regenerated". */
+  action: string;
+  read: boolean;
+  readAt: string | null;
+  createdAt: string;
+}
+
+/** Upstream `meta` block on the flat-array paginated lists. */
+export interface PageMeta {
+  currentPage: number;
+  lastPage: number;
+  total: number;
+}
+
+export interface NotificationPage {
+  items: AppNotification[];
+  meta: PageMeta;
+}
+
 export interface RegeneratedKeys {
   id: number;
   api_key: string;
@@ -145,33 +227,76 @@ export interface AuditLogEntry {
   actorName: string;
   actorEmail: string;
   actorRole: string;
-  /** Human-readable action, e.g. "Regenerating Key". */
+  /** Raw upstream action code, e.g. "api_keys.regenerated" — the filter key. */
   action: string;
-  /** High-level target area, e.g. "API", "Team". */
+  /** Prettified action for display, e.g. "API keys regenerated". */
+  actionLabel: string;
+  /** Target entity type, e.g. "business". */
   target: string;
   targetEntity: string;
   targetId: string;
   ip: string;
   browser: string;
   severity: AuditSeverity;
+  /** Extra per-action context, e.g. `{ webhook_url }`. Shape varies by action. */
+  metadata: Record<string, unknown>;
   /** ISO timestamp. */
   createdAt: string;
 }
 
+/** Server-side filters accepted by GET /audit-logs. */
+export interface AuditLogQuery {
+  severity?: AuditSeverity | "";
+  action?: string;
+  actor?: string;
+  /** YYYY-MM-DD. */
+  from?: string;
+  /** YYYY-MM-DD. */
+  to?: string;
+  search?: string;
+  perPage?: number;
+  page?: number;
+}
+
+export interface AuditLogPage {
+  entries: AuditLogEntry[];
+  meta: PageMeta;
+}
+
 /* -------------------------------------------------------------------- team */
 
-export type TeamRole = "Owner" | "Admin" | "Finance" | "Viewer";
+/** Wire values accepted by POST /team/invite — upstream validates lowercase. */
+export type TeamRole = "admin" | "finance" | "viewer";
+
+export type TeamMemberStatus = "active" | "invited" | "suspended";
 
 export interface TeamMember {
   id: string | number;
   name: string;
   email: string;
   role: TeamRole;
+  /** Upstream's display casing, e.g. "Viewer". */
+  roleLabel: string;
+  status: TeamMemberStatus;
+  statusLabel: string;
+  /** The business owner can't be removed. */
+  isOwner: boolean;
+  /** ISO timestamp, null when upstream omits it. */
+  createdAt: string | null;
 }
 
 export interface InviteTeamMemberPayload {
   email: string;
   role: TeamRole;
+}
+
+/** Public invite completion — upstream also requires `password_confirmation`. */
+export interface AcceptInvitePayload {
+  token: string;
+  name: string;
+  phone_number: string;
+  password: string;
+  password_confirmation: string;
 }
 
 /* ------------------------------------------------------------ API payloads */
@@ -211,4 +336,13 @@ export interface ChangePasswordPayload {
   current_password: string;
   new_password: string;
   new_password_confirmation: string;
+}
+
+/**
+ * POST /auth/login answers with either a token (signed in) or
+ * `two_factor_required`, in which case a code is emailed and the caller must
+ * finish through POST /auth/two-factor/verify.
+ */
+export interface LoginResponse extends MessageResponse {
+  twoFactorRequired: boolean;
 }

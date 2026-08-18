@@ -1,12 +1,20 @@
 "use client";
 
-import type { ComponentType } from "react";
+import { useEffect, useState, type ComponentType } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import type { IconProps } from "@/components/icons";
 
 /**
  * Confirmation modal for destructive or important actions (sign out, delete,
  * regenerate keys). Render inside <AnimatePresence> so exit animations play.
+ *
+ * Rendered through a portal on <body>: `backdrop-filter` and `transform`
+ * ancestors create a containing block for fixed-position descendants, so
+ * without this the overlay centres itself inside whatever wrapper it happens
+ * to sit in. The marketing navbar (`backdrop-blur-md`) did exactly that,
+ * pinning the logout dialog to the navbar's 72px box and clipping it off the
+ * top of the screen.
  */
 export default function ConfirmDialog({
   tone = "default",
@@ -35,7 +43,12 @@ export default function ConfirmDialog({
 }) {
   const danger = tone === "danger";
 
-  return (
+  // Portals need the DOM, so hold off until mounted.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0 }}
@@ -95,6 +108,7 @@ export default function ConfirmDialog({
           </button>
         </div>
       </motion.div>
-    </div>
+    </div>,
+    document.body,
   );
 }

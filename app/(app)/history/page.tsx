@@ -226,7 +226,7 @@ export default function HistoryPage() {
           <EmptyState message="No verifications yet. Requests you make will appear here." />
         ) : (
           <>
-            <div className="mt-6 overflow-x-auto">
+            <div data-tour="history-table" className="mt-6 overflow-x-auto">
               <table className="w-full min-w-[820px] border-collapse">
                 <thead>
                   <tr className="border-b border-line text-left align-top text-stat-label uppercase tracking-wide text-body">

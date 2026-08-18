@@ -133,7 +133,7 @@ export default function Sidebar() {
         </a>
 
         {/* Primary nav */}
-        <nav className="flex flex-col gap-1">
+        <nav data-tour="sidebar-nav" className="flex flex-col gap-1">
           {PRIMARY_NAV.map((item) => (
             <NavLink key={item.label} {...item} />
           ))}

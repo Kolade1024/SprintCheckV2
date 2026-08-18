@@ -16,6 +16,7 @@ import {
   Wallet,
   XCircle,
 } from "@/components/icons";
+import { useAppData } from "@/lib/client/AppDataProvider";
 import { appApi } from "@/lib/client/endpoints";
 import { useApi } from "@/lib/client/useApi";
 import { exportCsv, exportExcel, type ExportRow } from "@/lib/client/export";
@@ -384,6 +385,7 @@ function NameSearchResults({
 type LookupResult = { type: CacLookupType; data: unknown };
 
 export default function VerificationPage() {
+  const { refresh } = useAppData();
   const pricing = useApi((signal) => appApi.pricing(signal));
   const [type, setType] = useState<CacLookupType>("name");
   const [value, setValue] = useState("");
@@ -415,6 +417,9 @@ export default function VerificationPage() {
     try {
       const data = await LOOKUPS[lookupType].run(input);
       setResult({ type: lookupType, data });
+      // The lookup just debited the wallet — pull the fresh balance so the
+      // shell isn't showing a stale figure until the next full page load.
+      refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "The lookup failed. Try again.");
     } finally {
@@ -471,7 +476,11 @@ export default function VerificationPage() {
           ))}
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
+        <form
+          onSubmit={handleSubmit}
+          data-tour="verification-form"
+          className="mt-6 flex flex-col gap-4"
+        >
           <div className="flex flex-col gap-2">
             <label htmlFor="lookup-value" className="text-base font-medium text-ink">
               {config.inputLabel}

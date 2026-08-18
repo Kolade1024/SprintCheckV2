@@ -1,12 +1,22 @@
 import type {
+  AccountBusiness,
+  AccountDetails,
+  AppNotification,
   AuditLogEntry,
   BusinessProfile,
   CacBusinessMatch,
   Country,
+  DailyVerificationStat,
   DashboardSummary,
+  DeletionStatus,
+  FundingFee,
+  PageMeta,
   PricingService,
   RegeneratedKeys,
   TeamMember,
+  TeamMemberStatus,
+  TeamRole,
+  TwoFactorStatus,
   UserProfile,
   VerificationLog,
   VerificationStatus,
@@ -236,36 +246,134 @@ function normalizeSeverity(value: unknown): AuditLogEntry["severity"] {
   return "info";
 }
 
+/**
+ * Actions arrive as dotted codes ("api_keys.regenerated"). Upstream exposes no
+ * catalogue of them, so the label is derived rather than hardcoded — a new
+ * backend action still renders sensibly instead of showing a raw code.
+ */
+function humanizeAction(code: string): string {
+  const words = code.replace(/[._-]+/g, " ").trim();
+  if (!words) return "";
+  const sentence = words.charAt(0).toUpperCase() + words.slice(1);
+  return sentence.replace(/\bapi\b/gi, "API").replace(/\bip\b/gi, "IP");
+}
+
 export function mapAuditLogEntry(raw: Raw): AuditLogEntry {
   const actor = (raw.actor ?? raw.user ?? {}) as Raw;
+  const target = (raw.target ?? {}) as Raw;
+  const action = str(pick(raw, ["action", "activity", "title"]));
+  // `metadata` comes back as [] rather than {} when empty (PHP array casting).
+  const metadataRaw = raw.metadata;
   return {
     id: str(pick(raw, ["id", "reference", "log_id"])),
-    actorName: str(pick(raw, ["actor_name", "user_name"]) ?? pick(actor, ["name"])),
-    actorEmail: str(pick(raw, ["actor_email", "user_email"]) ?? pick(actor, ["email"])),
-    actorRole: str(pick(raw, ["actor_role", "role"]) ?? pick(actor, ["role"]), "Member"),
-    action: str(pick(raw, ["action", "activity", "title"])),
-    target: str(pick(raw, ["target", "target_type", "module"])),
-    targetEntity: str(pick(raw, ["target_entity", "entity", "target_name"])),
-    targetId: str(pick(raw, ["target_id", "entity_id", "reference"])),
-    ip: str(pick(raw, ["ip", "ip_address"])),
+    actorName: str(pick(actor, ["name"]) ?? pick(raw, ["actor_name", "user_name"])),
+    actorEmail: str(pick(actor, ["email"]) ?? pick(raw, ["actor_email", "user_email"])),
+    actorRole: str(pick(actor, ["role"]) ?? pick(raw, ["actor_role", "role"]), "member"),
+    action,
+    actionLabel: humanizeAction(action),
+    target: str(pick(target, ["type"]) ?? pick(raw, ["target_type", "module"])),
+    targetEntity: str(pick(target, ["name", "label"]) ?? pick(raw, ["target_entity", "entity"])),
+    targetId: str(pick(target, ["id"]) ?? pick(raw, ["target_id", "entity_id"])),
+    ip: str(pick(raw, ["ip_address", "ip"])),
     browser: str(pick(raw, ["browser", "user_agent", "device"])),
     severity: normalizeSeverity(pick(raw, ["severity", "level"])),
+    metadata:
+      metadataRaw && typeof metadataRaw === "object" && !Array.isArray(metadataRaw)
+        ? (metadataRaw as Record<string, unknown>)
+        : {},
     createdAt: str(pick(raw, ["created_at", "createdAt", "time", "date"])),
   };
 }
 
-const TEAM_ROLES: TeamMember["role"][] = ["Owner", "Admin", "Finance", "Viewer"];
+const TEAM_ROLES: TeamRole[] = ["admin", "finance", "viewer"];
+const TEAM_STATUSES: TeamMemberStatus[] = ["active", "invited", "suspended"];
+
+function titleCase(value: string): string {
+  return value ? value.charAt(0).toUpperCase() + value.slice(1) : "";
+}
 
 export function mapTeamMember(raw: Raw): TeamMember {
-  const roleRaw = str(pick(raw, ["role", "permission"]), "Viewer").toLowerCase();
-  const role =
-    TEAM_ROLES.find((r) => r.toLowerCase() === roleRaw) ??
-    (roleRaw === "owner" || roleRaw === "admin" ? "Admin" : "Viewer");
+  const roleRaw = str(pick(raw, ["role", "permission"]), "viewer").toLowerCase();
+  const role = TEAM_ROLES.find((r) => r === roleRaw) ?? "viewer";
+  const statusRaw = str(raw.status, "active").toLowerCase();
+  const status = TEAM_STATUSES.find((s) => s === statusRaw) ?? "active";
   return {
     id: str(pick(raw, ["id", "member_id"])),
     name: str(pick(raw, ["name", "full_name"])),
     email: str(pick(raw, ["email"])),
     role,
+    roleLabel: str(raw.role_label, titleCase(role)),
+    status,
+    statusLabel: str(raw.status_label, titleCase(status)),
+    isOwner: raw.is_owner === true,
+    createdAt: raw.created_at == null ? null : str(raw.created_at),
+  };
+}
+
+/* -------------------------------------------------- account / notifications */
+
+const TWO_FACTOR_STATUSES: TwoFactorStatus[] = ["off", "pending", "on"];
+
+function mapAccountBusiness(raw: Raw | null | undefined): AccountBusiness | null {
+  if (!raw) return null;
+  return {
+    id: num(raw.id),
+    name: str(raw.name),
+    walletBalance: num(pick(raw, ["wallet_balance", "wallet"])),
+    confidenceLevel: raw.confidence_level == null ? null : str(raw.confidence_level),
+  };
+}
+
+export function mapAccountDetails(data: Raw): AccountDetails {
+  const twoFactorRaw = str(data.two_factor_status).toLowerCase();
+  const deletionRaw = str(data.deletion_status, "none").toLowerCase();
+  const twoFactorEnabled = data.two_factor_enabled === true;
+  return {
+    id: num(data.id),
+    name: str(data.name),
+    email: str(data.email),
+    phoneNumber: data.phone_number == null ? null : str(data.phone_number),
+    role: str(data.role, "viewer").toLowerCase(),
+    roleLabel: str(data.role_label, titleCase(str(data.role))),
+    status: str(data.status, "active").toLowerCase(),
+    twoFactorEnabled,
+    twoFactorStatus:
+      TWO_FACTOR_STATUSES.find((s) => s === twoFactorRaw) ?? (twoFactorEnabled ? "on" : "off"),
+    deletionStatus: (deletionRaw === "pending" ? "pending" : "none") as DeletionStatus,
+    deletionScheduledAt:
+      data.deletion_scheduled_at == null ? null : str(data.deletion_scheduled_at),
+    profilePhotoUrl: data.profile_photo_url == null ? null : str(data.profile_photo_url),
+    unreadNotifications: num(data.unread_notifications),
+    fundingFee: num(data.funding_fee),
+    business: mapAccountBusiness(data.business as Raw | null | undefined),
+  };
+}
+
+export function mapFundingFee(data: Raw): FundingFee {
+  return { fee: num(data.fee), currency: str(data.currency, "NGN") };
+}
+
+export function mapNotification(raw: Raw): AppNotification {
+  const readAt = raw.read_at == null ? null : str(raw.read_at);
+  return {
+    id: str(pick(raw, ["id", "uuid"])),
+    type: str(raw.type),
+    title: str(pick(raw, ["title", "subject"])),
+    body: str(pick(raw, ["body", "message", "description"])),
+    action: str(raw.action),
+    read: raw.read === true || readAt !== null,
+    readAt,
+    createdAt: str(pick(raw, ["created_at", "createdAt"])),
+  };
+}
+
+/** The flat-list endpoints (`{ data: [], meta }`) share this meta block. */
+export function mapPageMeta(raw: Raw | null | undefined, fallbackTotal: number): PageMeta {
+  const meta = raw ?? {};
+  return {
+    currentPage: num(meta.current_page, 1),
+    lastPage: num(meta.last_page, 1),
+    total: num(meta.total, fallbackTotal),
   };
 }
 
@@ -273,6 +381,14 @@ export function mapTeamMember(raw: Raw): TeamMember {
 
 export function mapCountry(raw: Raw): Country {
   return { code: str(raw.code), name: str(raw.name) };
+}
+
+export function mapDailyStat(raw: Raw): DailyVerificationStat {
+  return {
+    date: str(pick(raw, ["date", "day"])),
+    successful: num(pick(raw, ["successful", "success"])),
+    failed: num(pick(raw, ["failed", "failure"])),
+  };
 }
 
 export function mapRegeneratedKeys(data: Raw): RegeneratedKeys {

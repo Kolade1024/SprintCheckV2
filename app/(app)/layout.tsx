@@ -1,6 +1,8 @@
 import Sidebar from "@/components/dashboard/Sidebar";
 import Topbar from "@/components/dashboard/Topbar";
+import TourOverlay from "@/components/dashboard/TourOverlay";
 import { AppDataProvider } from "@/lib/client/AppDataProvider";
+import { TourProvider } from "@/lib/client/tour/TourProvider";
 
 /**
  * Shared shell for the authenticated app pages (dashboard, history, billing,
@@ -18,15 +20,18 @@ export default function AppLayout({
 }) {
   return (
     <AppDataProvider>
-      <div className="flex min-h-screen bg-[#fbfbfe]">
-        <Sidebar />
-        <div className="min-w-0 flex-1">
-          <div className="mx-auto max-w-[1200px] px-5 py-6 md:px-8">
-            <Topbar />
-            {children}
+      <TourProvider>
+        <div className="flex min-h-screen bg-[#fbfbfe]">
+          <Sidebar />
+          <div className="min-w-0 flex-1">
+            <div className="mx-auto max-w-[1200px] px-5 py-6 md:px-8">
+              <Topbar />
+              {children}
+            </div>
           </div>
         </div>
-      </div>
+        <TourOverlay />
+      </TourProvider>
     </AppDataProvider>
   );
 }

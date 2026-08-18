@@ -175,6 +175,7 @@ export default function BillingPage() {
 
             <button
               type="button"
+              data-tour="topup"
               onClick={() => setTopUpOpen(true)}
               className="inline-flex h-12 items-center justify-center gap-2 rounded-btn bg-brand px-6 text-base font-medium text-offwhite shadow-glow transition-transform hover:-translate-y-px"
             >

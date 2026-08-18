@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { ArrowRight, CheckCircle, Check, ChevronDown } from "./icons";
+import { useState } from "react";
+import { ArrowRight, CheckCircle } from "./icons";
+import Select from "@/components/dashboard/Select";
 
 const INPUT =
   "h-12 w-full rounded-btn border border-line bg-white px-4 text-base text-ink shadow-card outline-none transition-colors placeholder:text-body/60 focus:border-brand focus:ring-2 focus:ring-brand/20";
@@ -11,144 +12,13 @@ const TOPICS = [
   "Sales & pricing",
   "Technical support",
   "Partnerships",
-];
+].map((topic) => ({ value: topic, label: topic }));
 
 type Status = "idle" | "submitting" | "done";
 
-/**
- * Custom listbox replacing a native <select> so the control matches the rest
- * of the UI. Keyboard support: ↑/↓ to move, Enter/Space to choose, Esc to
- * close; closes on outside click. Mirrors the sandbox endpoint picker.
- */
-function TopicSelect({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [active, setActive] = useState(() => TOPICS.indexOf(value));
-  const rootRef = useRef<HTMLDivElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function onPointerDown(e: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", onPointerDown);
-    return () => document.removeEventListener("mousedown", onPointerDown);
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    setActive(TOPICS.indexOf(value));
-    listRef.current?.focus();
-  }, [open, value]);
-
-  useEffect(() => {
-    if (!open) return;
-    listRef.current
-      ?.querySelectorAll("li")
-      [active]?.scrollIntoView({ block: "nearest" });
-  }, [open, active]);
-
-  function choose(i: number) {
-    onChange(TOPICS[i]);
-    setOpen(false);
-  }
-
-  function onButtonKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      setOpen(true);
-    }
-  }
-
-  function onListKeyDown(e: React.KeyboardEvent) {
-    switch (e.key) {
-      case "ArrowDown":
-        e.preventDefault();
-        setActive((a) => Math.min(a + 1, TOPICS.length - 1));
-        break;
-      case "ArrowUp":
-        e.preventDefault();
-        setActive((a) => Math.max(a - 1, 0));
-        break;
-      case "Enter":
-      case " ":
-        e.preventDefault();
-        choose(active);
-        break;
-      case "Escape":
-        e.preventDefault();
-        setOpen(false);
-        break;
-      case "Tab":
-        setOpen(false);
-        break;
-    }
-  }
-
-  return (
-    <div ref={rootRef} className="relative">
-      <button
-        type="button"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-labelledby="topic-label"
-        onClick={() => setOpen((v) => !v)}
-        onKeyDown={onButtonKeyDown}
-        className={`flex h-12 w-full items-center justify-between gap-2 rounded-btn border bg-white px-4 text-left text-base text-ink shadow-card outline-none transition-colors ${
-          open ? "border-brand ring-2 ring-brand/20" : "border-line hover:border-brand/60"
-        }`}
-      >
-        {value}
-        <ChevronDown
-          className={`h-4 w-4 shrink-0 text-body transition-transform ${open ? "rotate-180" : ""}`}
-        />
-      </button>
-
-      {open && (
-        <ul
-          ref={listRef}
-          role="listbox"
-          tabIndex={-1}
-          aria-activedescendant={`topic-opt-${active}`}
-          onKeyDown={onListKeyDown}
-          className="absolute left-0 right-0 top-[calc(100%+6px)] z-20 max-h-64 overflow-auto rounded-card border border-line bg-white p-1.5 shadow-glass outline-none"
-        >
-          {TOPICS.map((topic, i) => {
-            const selected = topic === value;
-            return (
-              <li
-                key={topic}
-                id={`topic-opt-${i}`}
-                role="option"
-                aria-selected={selected}
-                onClick={() => choose(i)}
-                onMouseEnter={() => setActive(i)}
-                className={`flex cursor-pointer items-center justify-between gap-3 rounded-btn px-3 py-2.5 text-base ${
-                  i === active ? "bg-brand/10 text-ink" : "text-body"
-                }`}
-              >
-                {topic}
-                {selected && <Check className="h-4 w-4 shrink-0 text-brand-accent" />}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </div>
-  );
-}
-
 export default function ContactForm() {
   const [status, setStatus] = useState<Status>("idle");
-  const [topic, setTopic] = useState(TOPICS[0]);
+  const [topic, setTopic] = useState(TOPICS[0].value);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -221,7 +91,12 @@ export default function ContactForm() {
           <span id="topic-label" className="text-small font-medium text-ink">
             Topic
           </span>
-          <TopicSelect value={topic} onChange={setTopic} />
+          <Select
+            ariaLabel="Topic"
+            value={topic}
+            onChange={setTopic}
+            options={TOPICS}
+          />
         </div>
       </div>
 

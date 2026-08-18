@@ -215,6 +215,7 @@ export default function DevelopersPage() {
           {/* API card */}
           <motion.section
             {...fadeUp}
+            data-tour="api-keys"
             transition={{ duration: 0.5, delay: 0.08, ease: [0.4, 0, 0.2, 1] }}
             className="mt-8 rounded-panel border border-line bg-white p-6 shadow-glass md:p-8"
           >

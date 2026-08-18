@@ -7,6 +7,10 @@ import { useAppData } from "@/lib/client/AppDataProvider";
 import { AlertTriangle, Check, Copy, CreditCard, Wallet, X } from "@/components/icons";
 import type { VirtualAccount } from "@/lib/shared/types";
 
+function formatFee(fee: number): string {
+  return `₦${fee.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+}
+
 /**
  * Wallet top-up flow. Merchants fund their wallet by bank transfer to a
  * dedicated virtual account; if none exists yet, one is generated from the
@@ -19,7 +23,7 @@ export default function TopUpModal({
   accounts: VirtualAccount[];
   onClose: () => void;
 }) {
-  const { refresh } = useAppData();
+  const { account, refresh } = useAppData();
   const [generated, setGenerated] = useState<VirtualAccount | null>(null);
   const [bvn, setBvn] = useState("");
   const [generating, setGenerating] = useState(false);
@@ -93,13 +97,20 @@ export default function TopUpModal({
           </div>
         </div>
 
-        <div className="mt-4 flex items-center gap-2.5 rounded-2xl border border-line bg-subtle px-4 py-3">
-          <AlertTriangle className="h-4 w-4 shrink-0 text-star" />
-          <p className="text-small text-body">
-            A <span className="font-semibold text-ink">₦80 funding fee</span> applies to each
-            top-up.
-          </p>
-        </div>
+        {/* Fee comes from /account (GET /wallet/funding-fee behind the same
+            value) — never hardcode it, merchants can be on custom pricing. */}
+        {account && (
+          <div className="mt-4 flex items-center gap-2.5 rounded-2xl border border-line bg-subtle px-4 py-3">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-star" />
+            <p className="text-small text-body">
+              A{" "}
+              <span className="font-semibold text-ink">
+                {formatFee(account.fundingFee)} funding fee
+              </span>{" "}
+              applies to each top-up.
+            </p>
+          </div>
+        )}
 
         {allAccounts.length > 0 ? (
           <div className="mt-6 flex flex-col gap-4">

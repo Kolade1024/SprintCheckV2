@@ -6,9 +6,10 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/dashboard/Asy
 import {
   ACTIVITY_RANGES,
   buildActivitySeries,
+  buildActivitySeriesFromDailyStats,
   type ActivityRange,
 } from "@/lib/shared/activity";
-import type { VerificationLog } from "@/lib/shared/types";
+import type { DailyVerificationStat, VerificationLog } from "@/lib/shared/types";
 
 function Bar({
   value,
@@ -41,18 +42,30 @@ function Bar({
 
 export default function ActivityChart({
   logs,
+  dailyStats,
   loading,
   error,
   onRetry,
 }: {
   logs: VerificationLog[];
+  /**
+   * Server-computed daily counts (GET /dashboard/stats). Covers the last 8
+   * days only, so it backs the 7D view; 30D/90D still bucket `logs`.
+   */
+  dailyStats?: DailyVerificationStat[] | null;
   loading: boolean;
   error: string | null;
   onRetry?: () => void;
 }) {
   const [range, setRange] = useState<ActivityRange>("7D");
 
-  const series = useMemo(() => buildActivitySeries(logs, range), [logs, range]);
+  const series = useMemo(
+    () =>
+      range === "7D" && dailyStats
+        ? buildActivitySeriesFromDailyStats(dailyStats)
+        : buildActivitySeries(logs, range),
+    [logs, dailyStats, range],
+  );
 
   const subtitle =
     range === "7D"

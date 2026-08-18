@@ -33,7 +33,19 @@ export type UpstreamAuth =
 interface UpstreamRequest {
   method?: "GET" | "POST" | "PUT" | "DELETE";
   auth: UpstreamAuth;
+  /** JSON-encoded, unless it's a FormData (multipart file uploads). */
   body?: unknown;
+}
+
+/** Builds a query string from defined, non-empty values. */
+export function queryString(params: Record<string, string | number | undefined | null>): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null || value === "") continue;
+    search.set(key, String(value));
+  }
+  const query = search.toString();
+  return query ? `?${query}` : "";
 }
 
 function authorizationHeader(auth: UpstreamAuth): string {
@@ -53,6 +65,8 @@ export async function upstream<T = unknown>(
   { method = "GET", auth, body }: UpstreamRequest,
 ): Promise<T> {
   const { baseUrl } = serverEnv();
+  // FormData rides through untouched so fetch can set its multipart boundary.
+  const isMultipart = body instanceof FormData;
 
   let response: Response;
   try {
@@ -61,9 +75,9 @@ export async function upstream<T = unknown>(
       headers: {
         Accept: "application/json",
         Authorization: authorizationHeader(auth),
-        ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+        ...(body !== undefined && !isMultipart ? { "Content-Type": "application/json" } : {}),
       },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: isMultipart ? (body as FormData) : body !== undefined ? JSON.stringify(body) : undefined,
       cache: "no-store",
     });
   } catch {
@@ -82,6 +96,21 @@ export async function upstream<T = unknown>(
       payload && typeof payload === "object" && "errors" in payload
         ? ((payload as { errors: Record<string, string[]> }).errors ?? undefined)
         : undefined;
+
+    // Upstream 5xx bodies are raw Laravel/Guzzle exceptions — they carry stack
+    // traces, file paths and third-party webhook URLs. Log them and hand the
+    // browser something safe instead.
+    if (response.status >= 500) {
+      console.error(
+        `[upstream] ${method} ${path} → ${response.status}:`,
+        messageFrom(payload, "no message"),
+      );
+      throw new UpstreamError(
+        "The verification service had a problem with that request. Try again shortly.",
+        response.status,
+      );
+    }
+
     throw new UpstreamError(
       messageFrom(payload, `Request failed (${response.status}).`),
       response.status,
@@ -95,6 +124,19 @@ export async function upstream<T = unknown>(
   }
 
   return payload as T;
+}
+
+/**
+ * The newer list endpoints (audit logs, notifications) skip Laravel's paginator
+ * envelope and answer `{ data: [...], meta: { current_page, last_page, total } }`
+ * — a single page at a time, with filtering done upstream.
+ */
+export async function upstreamList<T = unknown>(
+  path: string,
+  auth: UpstreamAuth,
+): Promise<{ rows: T[]; meta: Record<string, unknown> | undefined }> {
+  const envelope = await upstream<{ data?: T[]; meta?: Record<string, unknown> }>(path, { auth });
+  return { rows: Array.isArray(envelope?.data) ? envelope.data : [], meta: envelope?.meta };
 }
 
 /**

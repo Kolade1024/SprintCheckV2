@@ -1,12 +1,22 @@
 "use client";
 
-import { useRef, useState, type ComponentType, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentType,
+  type ReactNode,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppData } from "@/lib/client/AppDataProvider";
 import { appApi } from "@/lib/client/endpoints";
 import { useApi } from "@/lib/client/useApi";
 import { EmptyState, ErrorState, LoadingState } from "@/components/dashboard/AsyncState";
+import Avatar from "@/components/dashboard/Avatar";
+import CodeInput from "@/components/dashboard/CodeInput";
 import ConfirmDialog from "@/components/dashboard/ConfirmDialog";
+import Select from "@/components/dashboard/Select";
 import type { TeamMember, TeamRole } from "@/lib/shared/types";
 import {
   AlertTriangle,
@@ -29,7 +39,6 @@ import {
   Trash,
   User,
   Users,
-  ChevronDown,
   X,
   type IconProps,
 } from "@/components/icons";
@@ -154,19 +163,69 @@ function memberSince(iso: string | null | undefined): string {
   return d.toLocaleDateString(undefined, { month: "short", year: "numeric" });
 }
 
+/** Upstream caps uploads at a few MB; mirror that before spending a request. */
+const MAX_PHOTO_BYTES = 4 * 1024 * 1024;
+
 function ProfileCard() {
-  const { summary } = useAppData();
+  const { summary, account, refresh } = useAppData();
   const user = summary?.user;
-  const name = user?.name || "Your account";
-  const email = user?.email || "";
+  const name = account?.name || user?.name || "Your account";
+  const email = account?.email || user?.email || "";
   const business = user?.business;
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoNotice, setPhotoNotice] = useState<Notice | null>(null);
+
+  const twoFactorOn = account?.twoFactorEnabled ?? false;
+
+  async function handleFile(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    // Reset immediately so re-picking the same file still fires a change.
+    event.target.value = "";
+    if (!file) return;
+
+    if (file.size > MAX_PHOTO_BYTES) {
+      setPhotoNotice({ kind: "error", message: "That image is larger than 4MB." });
+      return;
+    }
+
+    setPhotoBusy(true);
+    setPhotoNotice(null);
+    try {
+      await appApi.uploadProfilePhoto(file);
+      setPhotoNotice({ kind: "success", message: "Photo updated." });
+      refresh();
+    } catch (err) {
+      setPhotoNotice({
+        kind: "error",
+        message: err instanceof Error ? err.message : "Could not upload that photo.",
+      });
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
+  async function removePhoto() {
+    setPhotoBusy(true);
+    setPhotoNotice(null);
+    try {
+      await appApi.removeProfilePhoto();
+      setPhotoNotice({ kind: "success", message: "Photo removed." });
+      refresh();
+    } catch (err) {
+      setPhotoNotice({
+        kind: "error",
+        message: err instanceof Error ? err.message : "Could not remove your photo.",
+      });
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
 
   const stats: { label: string; value: ReactNode }[] = [
     {
-      label: "Plan",
-      // The API has no plan field yet — the business name is the closest
-      // account identity we can show truthfully.
-      value: <span className="font-semibold text-ink">{business?.name || "—"}</span>,
+      label: "Role",
+      value: <span className="font-semibold text-ink">{account?.roleLabel || "—"}</span>,
     },
     {
       label: "Member since",
@@ -176,7 +235,12 @@ function ProfileCard() {
     },
     {
       label: "2FA",
-      value: (
+      value: twoFactorOn ? (
+        <span className="inline-flex items-center gap-1 rounded-pill bg-success/10 px-2.5 py-1 text-stat-label font-semibold text-success">
+          <ShieldCheck className="h-3.5 w-3.5" />
+          On
+        </span>
+      ) : (
         <span className="inline-flex items-center gap-1 rounded-pill bg-star/10 px-2.5 py-1 text-stat-label font-semibold text-star">
           <AlertTriangle className="h-3.5 w-3.5" />
           Off
@@ -193,13 +257,19 @@ function ProfileCard() {
     >
       <div className="flex flex-col items-center text-center">
         <div className="relative">
-          <div className="flex h-28 w-28 items-center justify-center rounded-pill bg-brand text-[32px] font-bold text-offwhite shadow-glow ring-4 ring-white">
-            {initialsOf(name)}
-          </div>
+          <Avatar
+            name={name}
+            src={account?.profilePhotoUrl}
+            letters={2}
+            className="h-28 w-28 shadow-glow ring-4 ring-white"
+            textClassName="text-[32px] font-bold"
+          />
           <button
             type="button"
             aria-label="Change photo"
-            className="absolute bottom-1 right-1 flex h-9 w-9 items-center justify-center rounded-pill bg-brand text-offwhite ring-4 ring-white transition-transform hover:scale-105"
+            disabled={photoBusy}
+            onClick={() => fileInput.current?.click()}
+            className="absolute bottom-1 right-1 flex h-9 w-9 items-center justify-center rounded-pill bg-brand text-offwhite ring-4 ring-white transition-transform hover:scale-105 disabled:opacity-60"
           >
             <Camera className="h-4 w-4" />
           </button>
@@ -210,26 +280,44 @@ function ProfileCard() {
 
         <span className="mt-3 inline-flex items-center gap-1.5 rounded-pill bg-subtle px-3 py-1.5 text-small font-medium text-brand-accent">
           <BadgeCheck className="h-4 w-4" />
-          Verified business
+          {business?.name || "Your business"}
         </span>
       </div>
+
+      <input
+        ref={fileInput}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={handleFile}
+        className="hidden"
+      />
 
       <div className="mt-6 flex items-center gap-3">
         <button
           type="button"
-          className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-btn bg-subtle text-small font-medium text-brand-accent transition-colors hover:bg-brand/10"
+          disabled={photoBusy}
+          onClick={() => fileInput.current?.click()}
+          className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-btn bg-subtle text-small font-medium text-brand-accent transition-colors hover:bg-brand/10 disabled:opacity-60"
         >
           <Camera className="h-4 w-4" />
-          Upload
+          {photoBusy ? "Working…" : "Upload"}
         </button>
         <button
           type="button"
-          className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-btn text-small font-medium text-red-500 transition-colors hover:bg-red-50"
+          disabled={photoBusy || !account?.profilePhotoUrl}
+          onClick={removePhoto}
+          className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-btn text-small font-medium text-red-500 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Trash className="h-4 w-4" />
           Remove
         </button>
       </div>
+
+      {photoNotice && (
+        <div className="mt-3 text-center">
+          <NoticeBanner notice={photoNotice} />
+        </div>
+      )}
 
       <div className="mt-6 flex flex-col gap-3 border-t border-line pt-6">
         {stats.map((s) => (
@@ -245,29 +333,83 @@ function ProfileCard() {
 
 /* --------------------------------------------------------------- 2FA modal */
 
-function TwoFactorModal({ onClose }: { onClose: () => void }) {
-  const LEN = 6;
-  const [digits, setDigits] = useState<string[]>(Array(LEN).fill(""));
-  const inputs = useRef<Array<HTMLInputElement | null>>([]);
-  const complete = digits.join("").length === LEN;
+/**
+ * Both directions of 2FA use the same shape: the server emails a 6-digit code
+ * and we trade it for the state change. Enabling starts the code with
+ * /two-factor/enable, disabling rotates one with /two-factor/resend.
+ */
+function TwoFactorModal({
+  mode,
+  onClose,
+  onDone,
+}: {
+  mode: "enable" | "disable";
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const { account } = useAppData();
+  const email = account?.email ?? "";
+  const enabling = mode === "enable";
 
-  function handleChange(i: number, raw: string) {
-    const value = raw.replace(/\D/g, "");
-    if (!value) {
-      setDigits((p) => p.map((d, idx) => (idx === i ? "" : d)));
-      return;
+  const [code, setCode] = useState("");
+  const [sending, setSending] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const requested = useRef(false);
+
+  // Ask for the code as soon as the modal opens (guarded against StrictMode's
+  // double-effect, since the endpoint is rate limited).
+  useEffect(() => {
+    if (requested.current) return;
+    requested.current = true;
+
+    const send = enabling ? appApi.enableTwoFactor() : appApi.resendTwoFactorCode();
+    send
+      .then((res) => setNotice({ kind: "success", message: res.message }))
+      .catch((err: unknown) =>
+        setNotice({
+          kind: "error",
+          message: err instanceof Error ? err.message : "Could not send a code.",
+        }),
+      )
+      .finally(() => setSending(false));
+  }, [enabling]);
+
+  async function resend() {
+    setSending(true);
+    setNotice(null);
+    try {
+      const res = await appApi.resendTwoFactorCode();
+      setNotice({ kind: "success", message: res.message });
+    } catch (err) {
+      setNotice({
+        kind: "error",
+        message: err instanceof Error ? err.message : "Could not resend the code.",
+      });
+    } finally {
+      setSending(false);
     }
-    const chars = value.split("");
-    setDigits((p) => {
-      const next = [...p];
-      for (let k = 0; k < chars.length && i + k < LEN; k++) next[i + k] = chars[k];
-      return next;
-    });
-    inputs.current[Math.min(i + chars.length, LEN - 1)]?.focus();
   }
 
-  function handleKey(i: number, e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Backspace" && !digits[i] && i > 0) inputs.current[i - 1]?.focus();
+  async function submit() {
+    if (code.length !== 6 || submitting) return;
+    setSubmitting(true);
+    setNotice(null);
+    try {
+      const res = enabling
+        ? await appApi.verifyTwoFactor(code)
+        : await appApi.disableTwoFactor(code);
+      setNotice({ kind: "success", message: res.message });
+      onDone();
+      onClose();
+    } catch (err) {
+      setNotice({
+        kind: "error",
+        message: err instanceof Error ? err.message : "That code didn't work.",
+      });
+      setCode("");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -276,10 +418,13 @@ function TwoFactorModal({ onClose }: { onClose: () => void }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        onClick={onClose}
+        onClick={submitting ? undefined : onClose}
         className="absolute inset-0 bg-ink/40 backdrop-blur-sm"
       />
       <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-label={enabling ? "Enable two-factor authentication" : "Disable two-factor authentication"}
         initial={{ opacity: 0, y: 20, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 20, scale: 0.97 }}
@@ -289,60 +434,76 @@ function TwoFactorModal({ onClose }: { onClose: () => void }) {
         <button
           type="button"
           onClick={onClose}
+          disabled={submitting}
           aria-label="Close"
-          className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-btn text-body transition-colors hover:bg-black/5 hover:text-ink"
+          className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-btn text-body transition-colors hover:bg-black/5 hover:text-ink disabled:opacity-40"
         >
           <X className="h-5 w-5" />
         </button>
 
         <div className="flex items-center gap-4">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-card bg-brand text-offwhite shadow-glow">
+          <span
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-card text-offwhite shadow-glow ${
+              enabling ? "bg-brand" : "bg-red-500"
+            }`}
+          >
             <ShieldCheck className="h-6 w-6" />
           </span>
           <div>
-            <h3 className="text-card-title font-bold text-ink">Set up two-factor auth</h3>
-            <p className="text-small text-body">Takes about 60 seconds.</p>
+            <h3 className="text-card-title font-bold text-ink">
+              {enabling ? "Set up two-factor auth" : "Turn off two-factor auth"}
+            </h3>
+            <p className="text-small text-body">
+              {enabling ? "Takes about 60 seconds." : "Confirm it's really you."}
+            </p>
           </div>
         </div>
 
         <p className="mt-6 text-base text-body">
-          Enter the 6-digit code we sent to{" "}
-          <span className="font-medium text-ink">odejinmemmanuel@gmail.com</span>.
+          {email ? (
+            <>
+              Enter the 6-digit code we sent to{" "}
+              <span className="font-medium text-ink">{email}</span>.
+            </>
+          ) : (
+            "Enter the 6-digit code we sent to your account email."
+          )}
         </p>
 
-        <div className="mt-5 flex items-center justify-center gap-3">
-          {digits.map((d, i) => (
-            <input
-              key={i}
-              ref={(el) => {
-                inputs.current[i] = el;
-              }}
-              type="text"
-              inputMode="numeric"
-              maxLength={LEN}
-              value={d}
-              onChange={(e) => handleChange(i, e.target.value)}
-              onKeyDown={(e) => handleKey(i, e)}
-              aria-label={`Digit ${i + 1}`}
-              className="h-16 w-16 rounded-2xl border border-line bg-subtle text-center text-[22px] font-semibold text-ink outline-none transition-colors focus:border-brand focus:bg-white focus:ring-2 focus:ring-brand/20"
-            />
-          ))}
+        <div className="mt-5">
+          <CodeInput
+            value={code}
+            onChange={setCode}
+            onComplete={submit}
+            disabled={submitting}
+            autoFocus
+          />
         </div>
+
+        {notice && (
+          <div className="mt-5 text-center">
+            <NoticeBanner notice={notice} />
+          </div>
+        )}
 
         <div className="mt-7 flex items-center justify-center gap-3">
           <button
             type="button"
-            className="inline-flex h-12 items-center justify-center rounded-btn bg-subtle px-6 text-base font-medium text-brand-accent transition-colors hover:bg-brand/10"
+            onClick={resend}
+            disabled={sending || submitting}
+            className="inline-flex h-12 items-center justify-center rounded-btn bg-subtle px-6 text-base font-medium text-brand-accent transition-colors hover:bg-brand/10 disabled:opacity-60"
           >
-            Resend
+            {sending ? "Sending…" : "Resend"}
           </button>
           <button
             type="button"
-            disabled={!complete}
-            onClick={onClose}
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-btn bg-brand px-6 text-base font-medium text-offwhite shadow-glow transition-all hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+            disabled={code.length !== 6 || submitting}
+            onClick={submit}
+            className={`inline-flex h-12 items-center justify-center gap-2 rounded-btn px-6 text-base font-medium text-offwhite shadow-glow transition-all hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 ${
+              enabling ? "bg-brand" : "bg-red-500"
+            }`}
           >
-            Verify
+            {submitting ? "Verifying…" : enabling ? "Verify" : "Turn off"}
             <ArrowRight className="h-4 w-4" />
           </button>
         </div>
@@ -441,6 +602,21 @@ function BusinessPanel() {
   const business = summary?.user?.business;
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
+  const countries = useApi((signal) => appApi.countries(signal));
+  const [country, setCountry] = useState(business?.country ?? "");
+
+  // The business record arrives after first paint, so seed the select once it's in.
+  useEffect(() => setCountry(business?.country ?? ""), [business?.country]);
+
+  const countryOptions = useMemo(() => {
+    const options = (countries.data ?? []).map((c) => ({ value: c.name, label: c.name }));
+    // Keep a stored value that isn't in the list (legacy free-text) selectable
+    // rather than silently blanking it on the next save.
+    if (country && !options.some((o) => o.value === country)) {
+      options.unshift({ value: country, label: country });
+    }
+    return options;
+  }, [countries.data, country]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -453,7 +629,7 @@ function BusinessPanel() {
         business_registration_number: value("business_registration_number"),
         business_website: value("business_website"),
         city: value("city"),
-        country: value("country"),
+        country,
         tax_identification_number: value("tax_identification_number"),
         business_description: value("business_description"),
         // The upstream API requires these two even though the form focuses on
@@ -512,13 +688,18 @@ function BusinessPanel() {
           name="city"
           defaultValue={business?.city ?? ""}
         />
-        <Field
-          key={business?.country}
-          label="Country"
-          icon={Globe}
-          name="country"
-          defaultValue={business?.country ?? ""}
-        />
+        <div className="flex flex-col gap-2">
+          <span className="text-base font-medium text-ink">Country</span>
+          <Select
+            size="lg"
+            tone="subtle"
+            ariaLabel="Country"
+            value={country}
+            onChange={setCountry}
+            options={countryOptions}
+            placeholder={countries.loading ? "Loading countries…" : "Select a country"}
+          />
+        </div>
         <Field
           key={business?.tax_identification_number}
           label="Tax identification number"
@@ -544,10 +725,34 @@ function BusinessPanel() {
   );
 }
 
-function SecurityPanel({ onEnable2FA }: { onEnable2FA: () => void }) {
+function SecurityPanel({ onManage2FA }: { onManage2FA: (mode: "enable" | "disable") => void }) {
+  const { account, refresh } = useAppData();
   const [show, setShow] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [deletionNotice, setDeletionNotice] = useState<Notice | null>(null);
+
+  const twoFactorOn = account?.twoFactorEnabled ?? false;
+  const deletionPending = account?.deletionStatus === "pending";
+
+  async function cancelDeletion() {
+    setCancelling(true);
+    setDeletionNotice(null);
+    try {
+      const res = await appApi.cancelAccountDeletion();
+      setDeletionNotice({ kind: "success", message: res.message });
+      refresh();
+    } catch (err) {
+      setDeletionNotice({
+        kind: "error",
+        message: err instanceof Error ? err.message : "Could not cancel the deletion.",
+      });
+    } finally {
+      setCancelling(false);
+    }
+  }
 
   async function handleChangePassword(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -630,19 +835,32 @@ function SecurityPanel({ onEnable2FA }: { onEnable2FA: () => void }) {
       {/* 2FA */}
       <div className="rounded-2xl border border-line bg-subtle p-6">
         <div className="flex items-start gap-4">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-card bg-star/10 text-star">
-            <AlertTriangle className="h-5 w-5" />
+          <span
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-card ${
+              twoFactorOn ? "bg-success/10 text-success" : "bg-star/10 text-star"
+            }`}
+          >
+            {twoFactorOn ? <ShieldCheck className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
           </span>
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-3">
               <h3 className="text-card-title font-bold text-ink">Two-factor authentication</h3>
-              <span className="inline-flex items-center gap-1 rounded-pill bg-star/10 px-2.5 py-1 text-stat-label font-semibold text-star">
-                <AlertTriangle className="h-3.5 w-3.5" />
-                Not enabled
-              </span>
+              {twoFactorOn ? (
+                <span className="inline-flex items-center gap-1 rounded-pill bg-success/10 px-2.5 py-1 text-stat-label font-semibold text-success">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  Enabled
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-pill bg-star/10 px-2.5 py-1 text-stat-label font-semibold text-star">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  Not enabled
+                </span>
+              )}
             </div>
             <p className="mt-1 text-small text-body">
-              Protect your account with an authenticator app or SMS codes. Required for live API access.
+              {twoFactorOn
+                ? "Signing in asks for a one-time code emailed to you."
+                : "Add a second step at sign-in with one-time codes emailed to you."}
             </p>
 
             <div className="mt-4 flex w-fit items-center gap-3 rounded-2xl border border-line bg-white px-4 py-3">
@@ -651,45 +869,209 @@ function SecurityPanel({ onEnable2FA }: { onEnable2FA: () => void }) {
               </span>
               <div>
                 <div className="text-base font-semibold text-ink">Email verification</div>
-                <div className="text-stat-label text-body">One-time codes to your phone</div>
+                <div className="text-stat-label text-body">
+                  One-time codes to {account?.email || "your account email"}
+                </div>
               </div>
             </div>
 
             <button
               type="button"
-              onClick={onEnable2FA}
-              className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-btn bg-brand px-5 text-base font-medium text-offwhite shadow-glow transition-transform hover:-translate-y-px"
+              onClick={() => onManage2FA(twoFactorOn ? "disable" : "enable")}
+              className={`mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-btn px-5 text-base font-medium transition-transform hover:-translate-y-px ${
+                twoFactorOn
+                  ? "border border-line bg-white text-red-500 hover:bg-red-50"
+                  : "bg-brand text-offwhite shadow-glow"
+              }`}
             >
               <ShieldCheck className="h-4 w-4" />
-              Enable 2FA
+              {twoFactorOn ? "Disable 2FA" : "Enable 2FA"}
             </button>
           </div>
         </div>
       </div>
 
       {/* Delete */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-red-200 bg-red-50 p-5">
-        <div>
-          <h3 className="text-card-title font-bold text-red-600">Delete account</h3>
-          <p className="text-small text-red-500/80">
-            Permanently remove your account and all associated data.
-          </p>
-        </div>
-        <button
-          type="button"
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-btn bg-red-500 px-5 text-base font-medium text-white shadow-btn transition-colors hover:bg-red-600"
-        >
-          <Trash className="h-4 w-4" />
-          Delete
-        </button>
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
+        {deletionPending ? (
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h3 className="text-card-title font-bold text-red-600">Deletion scheduled</h3>
+              <p className="text-small text-red-500/80">
+                This account is scheduled for deletion on{" "}
+                {formatDeletionDate(account?.deletionScheduledAt)}. Cancel any time before then.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={cancelDeletion}
+              disabled={cancelling}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-btn bg-white px-5 text-base font-medium text-red-600 shadow-btn transition-colors hover:bg-red-100 disabled:opacity-60"
+            >
+              {cancelling ? "Cancelling…" : "Keep my account"}
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h3 className="text-card-title font-bold text-red-600">Delete account</h3>
+              <p className="text-small text-red-500/80">
+                Schedules deletion after a 30-day grace period. Reversible until then.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDeleteOpen(true)}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-btn bg-red-500 px-5 text-base font-medium text-white shadow-btn transition-colors hover:bg-red-600"
+            >
+              <Trash className="h-4 w-4" />
+              Delete
+            </button>
+          </div>
+        )}
+        {deletionNotice && (
+          <div className="mt-4">
+            <NoticeBanner notice={deletionNotice} />
+          </div>
+        )}
       </div>
+
+      <AnimatePresence>
+        {deleteOpen && (
+          <DeleteAccountModal
+            onClose={() => setDeleteOpen(false)}
+            onScheduled={(message) => {
+              setDeletionNotice({ kind: "success", message });
+              refresh();
+            }}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function formatDeletionDate(iso: string | null | undefined): string {
+  if (!iso) return "the scheduled date";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "the scheduled date";
+  return date.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+}
+
+/** Password-confirmed deletion request — upstream 422s on a wrong password. */
+function DeleteAccountModal({
+  onClose,
+  onScheduled,
+}: {
+  onClose: () => void;
+  onScheduled: (message: string) => void;
+}) {
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await appApi.requestAccountDeletion(password);
+      onScheduled(res.message);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not schedule the deletion.");
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={submitting ? undefined : onClose}
+        className="absolute inset-0 bg-ink/40 backdrop-blur-sm"
+      />
+      <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Delete account"
+        initial={{ opacity: 0, y: 20, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 20, scale: 0.97 }}
+        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+        className="relative w-full max-w-[460px] rounded-hero bg-white p-7 shadow-glass"
+      >
+        <div className="flex items-start gap-4">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-card bg-red-50 text-red-500">
+            <Trash className="h-5 w-5" />
+          </span>
+          <div>
+            <h3 className="text-card-title font-bold text-ink">Delete this account?</h3>
+            <p className="mt-1 text-small text-body">
+              We&apos;ll schedule it for deletion in 30 days. You keep full access until then and
+              can cancel from this page at any point.
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <label htmlFor="delete-password" className="text-base font-medium text-ink">
+              Confirm your password
+            </label>
+            <div className="flex h-14 items-center gap-3 rounded-2xl border border-line bg-subtle px-4 transition-colors focus-within:border-brand focus-within:bg-white">
+              <Lock className="h-5 w-5 shrink-0 text-body" />
+              <input
+                id="delete-password"
+                type="password"
+                required
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="min-w-0 flex-1 bg-transparent text-base text-ink outline-none"
+              />
+            </div>
+          </div>
+
+          {error && (
+            <p role="alert" className="text-small font-medium text-red-600">
+              {error}
+            </p>
+          )}
+
+          <div className="flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={submitting}
+              className="inline-flex h-11 items-center justify-center rounded-btn bg-subtle px-5 text-base font-medium text-ink transition-colors hover:bg-black/5 disabled:opacity-60"
+            >
+              Keep account
+            </button>
+            <button
+              type="submit"
+              disabled={submitting || !password}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-btn bg-red-500 px-5 text-base font-medium text-white shadow-btn transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {submitting ? "Scheduling…" : "Schedule deletion"}
+            </button>
+          </div>
+        </form>
+      </motion.div>
     </div>
   );
 }
 
 /* --------------------------------------------------------------- team tab */
 
-const INVITE_ROLES: TeamRole[] = ["Admin", "Finance", "Viewer"];
+/** Upstream validates these lowercase; the label is presentation only. */
+const INVITE_ROLES: { value: TeamRole; label: string; hint: string }[] = [
+  { value: "admin", label: "Admin", hint: "Full access, including team and keys" },
+  { value: "finance", label: "Finance", hint: "Wallet, billing and pricing" },
+  { value: "viewer", label: "Viewer", hint: "Read-only access" },
+];
 
 function InviteMemberModal({
   onClose,
@@ -698,7 +1080,7 @@ function InviteMemberModal({
   onClose: () => void;
   onInvited: () => void;
 }) {
-  const [role, setRole] = useState<TeamRole>("Viewer");
+  const [role, setRole] = useState<TeamRole>("viewer");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -771,21 +1153,18 @@ function InviteMemberModal({
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-base font-medium text-ink">Role</label>
-            <div className="relative">
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value as TeamRole)}
-                className="h-14 w-full appearance-none rounded-2xl border border-line bg-subtle px-4 pr-10 text-base text-ink outline-none transition-colors focus:border-brand focus:bg-white"
-              >
-                {INVITE_ROLES.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-body" />
-            </div>
+            <span className="text-base font-medium text-ink">Role</span>
+            <Select
+              size="lg"
+              tone="subtle"
+              ariaLabel="Role"
+              value={role}
+              onChange={(next) => setRole(next as TeamRole)}
+              options={INVITE_ROLES}
+            />
+            <p className="text-stat-label text-body">
+              {INVITE_ROLES.find((r) => r.value === role)?.hint}
+            </p>
           </div>
 
           {error && (
@@ -869,14 +1248,19 @@ function TeamPanel() {
                 </div>
                 <div className="truncate text-small text-body">{member.email}</div>
               </div>
+              {member.status === "invited" && (
+                <span className="inline-flex rounded-pill bg-star/10 px-3 py-1.5 text-stat-label font-semibold text-star">
+                  {member.statusLabel}
+                </span>
+              )}
               <span className="inline-flex rounded-pill bg-subtle px-4 py-2 text-small font-medium text-ink">
-                {member.role}
+                {member.isOwner ? "Owner" : member.roleLabel}
               </span>
               <button
                 type="button"
                 onClick={() => setRemoving(member)}
-                disabled={member.role === "Owner"}
-                title={member.role === "Owner" ? "The owner can't be removed" : undefined}
+                disabled={member.isOwner}
+                title={member.isOwner ? "The owner can't be removed" : undefined}
                 className="text-base font-medium text-red-500 transition-colors hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Remove
@@ -916,8 +1300,9 @@ function TeamPanel() {
 /* ------------------------------------------------------------------ page */
 
 export default function ProfilePage() {
+  const { refresh } = useAppData();
   const [tab, setTab] = useState<Tab>("Profile");
-  const [modalOpen, setModalOpen] = useState(false);
+  const [twoFactorMode, setTwoFactorMode] = useState<"enable" | "disable" | null>(null);
 
   return (
     <>
@@ -964,14 +1349,20 @@ export default function ProfilePage() {
               <div className="mt-8">
                 {tab === "Profile" && <ProfilePanel />}
                 {tab === "Business info" && <BusinessPanel />}
-                {tab === "Security" && <SecurityPanel onEnable2FA={() => setModalOpen(true)} />}
+                {tab === "Security" && <SecurityPanel onManage2FA={setTwoFactorMode} />}
                 {tab === "Team" && <TeamPanel />}
               </div>
             </motion.section>
           </div>
 
       <AnimatePresence>
-        {modalOpen && <TwoFactorModal onClose={() => setModalOpen(false)} />}
+        {twoFactorMode && (
+          <TwoFactorModal
+            mode={twoFactorMode}
+            onClose={() => setTwoFactorMode(null)}
+            onDone={refresh}
+          />
+        )}
       </AnimatePresence>
     </>
   );

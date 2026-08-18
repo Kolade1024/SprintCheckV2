@@ -5,11 +5,15 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppData } from "@/lib/client/AppDataProvider";
 import { useLogout } from "@/lib/client/useLogout";
+import { useEdgeClamp } from "@/lib/client/useEdgeClamp";
+import { useTour } from "@/lib/client/tour/TourProvider";
+import Avatar from "@/components/dashboard/Avatar";
 import ConfirmDialog from "@/components/dashboard/ConfirmDialog";
 import {
   ChevronDown,
   CodeBrackets,
   LogOut,
+  Play,
   Receipt,
   User,
   type IconProps,
@@ -27,14 +31,14 @@ const MENU_LINKS: { label: string; href: string; icon: ComponentType<IconProps> 
   { label: "API keys", href: "/developers", icon: CodeBrackets },
 ];
 
-function initialOf(name: string | undefined): string {
-  return name?.trim()?.charAt(0)?.toUpperCase() || "U";
-}
-
 export default function UserMenu() {
-  const { summary } = useAppData();
+  const { summary, account } = useAppData();
+  const { start: startTour } = useTour();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  // Same right-anchored panel as the bell — keep it inside narrow viewports.
+  const edgeShift = useEdgeClamp(open, containerRef, panelRef);
   const {
     confirming: confirmingLogout,
     loggingOut,
@@ -44,8 +48,9 @@ export default function UserMenu() {
     cancel: cancelLogout,
   } = useLogout();
 
-  const name = summary?.user?.name ?? "";
-  const email = summary?.user?.email ?? "";
+  const name = account?.name ?? summary?.user?.name ?? "";
+  const email = account?.email ?? summary?.user?.email ?? "";
+  const photo = account?.profilePhotoUrl ?? null;
 
   // Close on outside click / Escape.
   useEffect(() => {
@@ -78,9 +83,7 @@ export default function UserMenu() {
         aria-label="Account menu"
         className="flex h-12 items-center gap-2.5 rounded-panel border border-line bg-white pl-1.5 pr-3 shadow-card transition-colors hover:bg-subtle"
       >
-        <span className="flex h-9 w-9 items-center justify-center rounded-pill bg-brand text-small font-bold text-offwhite">
-          {initialOf(name)}
-        </span>
+        <Avatar name={name} src={photo} className="h-9 w-9" />
         <span className="hidden flex-col items-start leading-tight md:flex">
           <span className="text-small font-semibold text-ink">{name || "Account"}</span>
           <span className="text-stat-label text-body">Live mode</span>
@@ -95,18 +98,18 @@ export default function UserMenu() {
       <AnimatePresence>
         {open && (
           <motion.div
+            ref={panelRef}
             role="menu"
             initial={{ opacity: 0, y: 8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.98 }}
             transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-            className="absolute right-0 top-[calc(100%+8px)] z-40 w-[264px] overflow-hidden rounded-panel border border-line bg-white shadow-glass"
+            style={{ right: -edgeShift }}
+            className="absolute top-[calc(100%+8px)] z-40 w-[min(264px,calc(100vw-1.5rem))] overflow-hidden rounded-panel border border-line bg-white shadow-glass"
           >
             {/* Identity */}
             <div className="flex items-center gap-3 border-b border-line bg-subtle/50 px-4 py-3.5">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-pill bg-brand text-small font-bold text-offwhite">
-                {initialOf(name)}
-              </span>
+              <Avatar name={name} src={photo} className="h-10 w-10" />
               <div className="min-w-0">
                 <div className="truncate text-small font-semibold text-ink">
                   {name || "Account"}
@@ -135,7 +138,22 @@ export default function UserMenu() {
               ))}
             </div>
 
-            {/* Sign out */}
+            {/* Tour replay + sign out */}
+            <div className="border-t border-line p-1.5">
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  startTour();
+                }}
+                className="flex w-full items-center gap-3 rounded-btn px-3 py-2.5 text-small font-medium text-body transition-colors hover:bg-subtle hover:text-ink"
+              >
+                <Play className="h-4 w-4 shrink-0" />
+                Replay product tour
+              </button>
+            </div>
+
             <div className="border-t border-line p-1.5">
               <button
                 type="button"

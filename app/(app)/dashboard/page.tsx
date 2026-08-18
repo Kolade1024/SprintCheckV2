@@ -137,6 +137,7 @@ function BalanceCard({ balance }: { balance: number }) {
   return (
     <motion.section
       {...fadeUp}
+      data-tour="balance"
       transition={{ duration: 0.55, delay: 0.05, ease: [0.4, 0, 0.2, 1] }}
       className="relative overflow-hidden rounded-panel bg-brand p-7 text-offwhite shadow-glow md:p-8"
     >
@@ -269,6 +270,8 @@ function RecentTable({
 export default function DashboardPage() {
   const { summary, loading, error, refresh } = useAppData();
   const history = useApi((signal) => appApi.history(signal));
+  // Server-computed daily counts back the chart's 7-day view.
+  const dailyStats = useApi((signal) => appApi.dashboardStats(signal));
 
   if (loading && !summary) {
     return (
@@ -316,9 +319,13 @@ export default function DashboardPage() {
 
         <ActivityChart
           logs={history.data ?? []}
+          dailyStats={dailyStats.data}
           loading={history.loading}
           error={history.error}
-          onRetry={history.refetch}
+          onRetry={() => {
+            history.refetch();
+            dailyStats.refetch();
+          }}
         />
         <RecentTable
           logs={history.data ?? []}

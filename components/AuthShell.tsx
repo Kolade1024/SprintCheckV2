@@ -227,16 +227,19 @@ export function SubmitButton({
   loadingText,
   children,
   className = "",
+  disabled = false,
 }: {
   loading?: boolean;
   loadingText: string;
   children: React.ReactNode;
   className?: string;
+  /** Blocks submission on top of `loading` — e.g. an incomplete code. */
+  disabled?: boolean;
 }) {
   return (
     <button
       type="submit"
-      disabled={loading}
+      disabled={loading || disabled}
       className={`mt-1 inline-flex h-12 items-center justify-center gap-2 rounded-btn bg-brand px-6 text-base font-medium text-offwhite shadow-glow transition-transform hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 ${className}`}
     >
       {loading ? (

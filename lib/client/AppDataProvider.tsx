@@ -12,11 +12,13 @@ import {
 import { useRouter } from "next/navigation";
 import { appApi } from "./endpoints";
 import { ApiError } from "./http";
-import type { DashboardSummary } from "@/lib/shared/types";
+import type { AccountDetails, DashboardSummary } from "@/lib/shared/types";
 
 interface AppDataContextValue {
   /** The /dashboard summary shared by every page in the authenticated shell. */
   summary: DashboardSummary | null;
+  /** The /account details — role, 2FA state, photo, unread count, funding fee. */
+  account: AccountDetails | null;
   loading: boolean;
   error: string | null;
   refresh: () => void;
@@ -25,12 +27,14 @@ interface AppDataContextValue {
 const AppDataContext = createContext<AppDataContextValue | null>(null);
 
 /**
- * Loads the dashboard summary once for the whole authenticated shell and
- * redirects to sign-in when the session is missing or expired (BFF 401).
+ * Loads the dashboard summary and account details once for the whole
+ * authenticated shell and redirects to sign-in when the session is missing or
+ * expired (BFF 401).
  */
 export function AppDataProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [account, setAccount] = useState<AccountDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [generation, setGeneration] = useState(0);
@@ -44,11 +48,19 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setError(null);
 
-    appApi
-      .dashboard(controller.signal)
-      .then((data) => {
+    Promise.all([
+      appApi.dashboard(controller.signal),
+      // The account call backs secondary UI (bell, avatar, funding fee), so a
+      // failure there must not blank out the dashboard.
+      appApi.account(controller.signal).catch((err: unknown) => {
+        if (err instanceof ApiError && err.status === 401) throw err;
+        return null;
+      }),
+    ])
+      .then(([dashboard, accountDetails]) => {
         if (controller.signal.aborted) return;
-        setSummary(data);
+        setSummary(dashboard);
+        setAccount(accountDetails);
         setLoading(false);
       })
       .catch((err: unknown) => {
@@ -67,7 +79,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(() => setGeneration((g) => g + 1), []);
 
   return (
-    <AppDataContext.Provider value={{ summary, loading, error, refresh }}>
+    <AppDataContext.Provider value={{ summary, account, loading, error, refresh }}>
       {children}
     </AppDataContext.Provider>
   );

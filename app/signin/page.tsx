@@ -2,19 +2,27 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail } from "@/components/icons";
+import { ArrowLeft, Mail } from "@/components/icons";
 import {
   AuthShell,
   PasswordField,
   SubmitButton,
   TextField,
 } from "@/components/AuthShell";
+import CodeInput from "@/components/dashboard/CodeInput";
 import { authApi } from "@/lib/client/endpoints";
+
+/** Credentials the second step needs after upstream asks for a 2FA code. */
+interface PendingLogin {
+  email: string;
+  remember: boolean;
+}
 
 export default function SignInPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState<PendingLogin | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -26,12 +34,30 @@ export default function SignInPage() {
     setError(null);
     setSubmitting(true);
     try {
-      await authApi.login({ email, password, remember });
+      const result = await authApi.login({ email, password, remember });
+      // 2FA accounts get no session yet — a code was emailed instead.
+      if (result.twoFactorRequired) {
+        setPending({ email, remember });
+        setSubmitting(false);
+        return;
+      }
       router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to sign in.");
       setSubmitting(false);
     }
+  }
+
+  if (pending) {
+    return (
+      <TwoFactorStep
+        pending={pending}
+        onBack={() => {
+          setPending(null);
+          setError(null);
+        }}
+      />
+    );
   }
 
   return (
@@ -100,6 +126,71 @@ export default function SignInPage() {
 
         <SubmitButton loading={submitting} loadingText="Signing in…">
           Sign in
+        </SubmitButton>
+      </form>
+    </AuthShell>
+  );
+}
+
+/** Second half of sign-in for accounts with 2FA switched on. */
+function TwoFactorStep({ pending, onBack }: { pending: PendingLogin; onBack: () => void }) {
+  const router = useRouter();
+  const [code, setCode] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function verify(value: string) {
+    if (value.length !== 6 || submitting) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await authApi.verifyLoginCode(pending.email, value, pending.remember);
+      router.push("/dashboard");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "That code didn't work.");
+      setCode("");
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <AuthShell
+      title="Check your email"
+      subtitle={`We sent a 6-digit code to ${pending.email}.`}
+      footer={
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-1.5 font-medium text-brand-accent transition-colors hover:text-brand"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Use a different account
+        </button>
+      }
+    >
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          verify(code);
+        }}
+        className="mt-7 flex flex-col gap-6"
+      >
+        <CodeInput
+          value={code}
+          onChange={setCode}
+          onComplete={verify}
+          disabled={submitting}
+          autoFocus
+        />
+
+        {error && (
+          <p className="text-center text-small font-medium text-red-600" role="alert">
+            {error}
+          </p>
+        )}
+
+        <SubmitButton loading={submitting} loadingText="Verifying…" disabled={code.length !== 6}>
+          Verify and sign in
         </SubmitButton>
       </form>
     </AuthShell>

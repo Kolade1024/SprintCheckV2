@@ -57,7 +57,9 @@ export default function DetailModal({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 20, scale: 0.97 }}
         transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-        className="relative max-h-[90vh] w-full max-w-[560px] overflow-y-auto rounded-hero bg-white p-7 shadow-glass"
+        // `no-scrollbar` keeps the card scrollable without the bar cutting
+        // across its rounded edge — the content still scrolls by wheel/touch/keys.
+        className="no-scrollbar relative max-h-[90vh] w-full max-w-[560px] overflow-y-auto rounded-hero bg-white p-7 shadow-glass"
       >
         <button
           type="button"
