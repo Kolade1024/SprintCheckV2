@@ -11,6 +11,7 @@ import {
   ChevronRight,
   ClipboardList,
   CodeBrackets,
+  Headset,
   History,
   LayoutGrid,
   LogOut,
@@ -36,6 +37,7 @@ export const PRIMARY_NAV: NavItem[] = [
   { label: "Developers", href: "/developers", icon: CodeBrackets },
   { label: "Pricing", href: "/pricing", icon: Tag },
   { label: "Audit Log", href: "/audit-log", icon: ClipboardList },
+  { label: "Support", href: "/support", icon: Headset },
 ];
 
 export const PROFILE_NAV: NavItem = { label: "Profile", href: "/profile", icon: User };

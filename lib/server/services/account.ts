@@ -72,14 +72,34 @@ export async function resendTwoFactorCode(token: string): Promise<MessageRespons
   return { message: res.message ?? "A new verification code has been sent to your email." };
 }
 
-/** Turning 2FA off also needs a current code, so the UI sends one here too. */
-export async function disableTwoFactor(token: string, code: unknown): Promise<MessageResponse> {
+/**
+ * Turning 2FA off is two-step against one endpoint: posting no code emails a
+ * fresh OTP, posting the code verifies it and switches 2FA off. Upstream is
+ * rate limited to 3 attempts/minute across both steps.
+ *
+ * This replaced an earlier workaround that borrowed /two-factor/resend to
+ * originate the disable code — resend only rotates a *pending* code, so it was
+ * never the right call once 2FA was already on.
+ */
+export async function disableTwoFactor(
+  token: string,
+  code?: unknown,
+): Promise<MessageResponse> {
+  const requesting = code === undefined || code === null || code === "";
+
   const res = await upstream<{ message?: string }>("/account/two-factor/disable", {
     method: "POST",
     auth: bearer(token),
-    body: { code: requireCode(code) },
+    body: requesting ? {} : { code: requireCode(code) },
   });
-  return { message: res.message ?? "Two-factor authentication disabled." };
+
+  return {
+    message:
+      res.message ??
+      (requesting
+        ? "A verification code has been sent to your email."
+        : "Two-factor authentication disabled."),
+  };
 }
 
 /* --------------------------------------------------------- profile photo */

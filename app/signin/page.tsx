@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Mail } from "@/components/icons";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ArrowLeft, CheckCircle, Mail } from "@/components/icons";
 import {
   AuthShell,
   PasswordField,
@@ -18,7 +18,26 @@ interface PendingLogin {
   remember: boolean;
 }
 
+/**
+ * `useSearchParams` opts a route into dynamic rendering unless it sits under a
+ * Suspense boundary, so the form is wrapped rather than letting the whole
+ * sign-in page lose its static prerender for one banner.
+ */
 export default function SignInPage() {
+  return (
+    <Suspense fallback={<SignInForm justRegistered={false} />}>
+      <SignInFormWithParams />
+    </Suspense>
+  );
+}
+
+function SignInFormWithParams() {
+  // Set by the post-signup redirect (/signin?registered=1).
+  const justRegistered = useSearchParams().get("registered") === "1";
+  return <SignInForm justRegistered={justRegistered} />;
+}
+
+function SignInForm({ justRegistered }: { justRegistered: boolean }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,6 +96,18 @@ export default function SignInPage() {
       }
     >
       <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-5">
+        {justRegistered && (
+          <div
+            role="status"
+            className="flex items-center gap-3 rounded-card border border-line bg-subtle px-4 py-3.5"
+          >
+            <CheckCircle className="h-5 w-5 shrink-0 text-success" />
+            <span className="text-small text-body">
+              Account created. Sign in to get started.
+            </span>
+          </div>
+        )}
+
         <TextField
           id="email"
           name="email"

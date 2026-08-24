@@ -19,7 +19,19 @@ type Field = {
   label: string;
   key: string;
   sample: string;
+  /**
+   * Format the live endpoint enforces. Used only to drive the sandbox's mocked
+   * error path, so a malformed value returns the API's validation envelope
+   * instead of a success payload.
+   */
+  rule?: { valid: (value: string) => boolean; message: string };
 };
+
+/** Identity numbers the API requires as a fixed-length digit string. */
+const exactDigits = (count: number, label: string): Field["rule"] => ({
+  valid: (value) => new RegExp(`^\\d{${count}}$`).test(value),
+  message: `The ${label} must be exactly ${count} digits.`,
+});
 
 type Endpoint = {
   label: string;
@@ -46,7 +58,12 @@ const ENDPOINTS: Endpoint[] = [
     path: "/bvn",
     auth: "apikey",
     fields: [
-      { label: "Bank Verification Number", key: "number", sample: "22454670613" },
+      {
+        label: "Bank Verification Number",
+        key: "number",
+        sample: "22454670613",
+        rule: exactDigits(11, "BVN"),
+      },
       { label: "Identifier", key: "identifier", sample: "dev@yourapp.com" },
     ],
     response: {
@@ -72,7 +89,12 @@ const ENDPOINTS: Endpoint[] = [
     path: "/nin",
     auth: "apikey",
     fields: [
-      { label: "National Identification Number", key: "number", sample: "52306459347" },
+      {
+        label: "National Identification Number",
+        key: "number",
+        sample: "52306459347",
+        rule: exactDigits(11, "NIN"),
+      },
       { label: "Identifier", key: "identifier", sample: "dev@yourapp.com" },
     ],
     response: {
@@ -98,7 +120,16 @@ const ENDPOINTS: Endpoint[] = [
     path: "/voters",
     auth: "apikey",
     fields: [
-      { label: "Voter Identification Number", key: "number", sample: "90F5AE4625505997419" },
+      {
+        label: "Voter Identification Number",
+        key: "number",
+        sample: "90F5AE4625505997419",
+        rule: {
+          // VINs are alphanumeric rather than fixed-length digits.
+          valid: (value) => /^[A-Za-z0-9]{9,25}$/.test(value),
+          message: "The VIN must be 9–25 letters or digits.",
+        },
+      },
       { label: "Identifier", key: "identifier", sample: "dev@yourapp.com" },
     ],
     response: {
@@ -368,6 +399,40 @@ function EndpointSelect({
 const sampleValues = (ep: Endpoint) =>
   Object.fromEntries(ep.fields.map((f) => [f.key, f.sample]));
 
+/** Credential and body fields that must carry a value before a request is valid. */
+function emptyFields(ep: Endpoint, values: Record<string, string>, apiKey: string) {
+  const missing = ep.fields.filter((f) => !(values[f.key] ?? "").trim()).map((f) => f.key);
+  if (!apiKey.trim()) missing.unshift("authorization");
+  return missing;
+}
+
+/**
+ * Field-level errors for values that are present but malformed. The sandbox
+ * previously answered "Verified Successfully" no matter what was typed; this
+ * drives the mocked error path so it mirrors the real API's 422 instead.
+ */
+function formatErrors(ep: Endpoint, values: Record<string, string>) {
+  const errors: Record<string, string[]> = {};
+  for (const field of ep.fields) {
+    const value = (values[field.key] ?? "").trim();
+    if (value && field.rule && !field.rule.valid(value)) {
+      errors[field.key] = [field.rule.message];
+    }
+  }
+  return errors;
+}
+
+/**
+ * Error envelopes differ by surface, same as production: the SDK routes answer
+ * `success: 0` while the merchant (bearer) routes answer `status: false`.
+ */
+function errorResponse(ep: Endpoint, errors: Record<string, string[]>) {
+  const message = "The given data was invalid.";
+  return ep.auth === "bearer"
+    ? { status: false, message, errors }
+    : { success: 0, message, errors };
+}
+
 export default function SandboxSection() {
   const [index, setIndex] = useState(0);
   const [values, setValues] = useState<Record<string, string>>(() =>
@@ -380,7 +445,17 @@ export default function SandboxSection() {
 
   const endpoint = ENDPOINTS[index];
   const curl = buildCurl(endpoint, values, apiKey || API_KEY);
-  const responseJson = JSON.stringify(endpoint.response, null, 2);
+
+  // Empty required fields block the request outright; malformed ones are let
+  // through so the sandbox can demonstrate the API's validation response.
+  const missing = emptyFields(endpoint, values, apiKey);
+  const invalid = formatErrors(endpoint, values);
+  const rejected = Object.keys(invalid).length > 0;
+  const responseJson = JSON.stringify(
+    rejected ? errorResponse(endpoint, invalid) : endpoint.response,
+    null,
+    2,
+  );
 
   function selectEndpoint(i: number) {
     setIndex(i);
@@ -390,6 +465,7 @@ export default function SandboxSection() {
   }
 
   function sendRequest() {
+    if (missing.length > 0) return;
     setSent(true);
     setTab("response");
   }
@@ -495,8 +571,19 @@ export default function SandboxSection() {
                     setValues((v) => ({ ...v, [f.key]: e.target.value }))
                   }
                   placeholder={f.sample}
-                  className="w-full rounded-btn border border-line bg-surface px-4 py-3 font-mono text-base text-ink shadow-card outline-none transition-colors focus:border-brand-accent"
+                  aria-invalid={invalid[f.key] ? true : undefined}
+                  aria-describedby={invalid[f.key] ? `sandbox-error-${f.key}` : undefined}
+                  className={`w-full rounded-btn border bg-surface px-4 py-3 font-mono text-base text-ink shadow-card outline-none transition-colors ${
+                    invalid[f.key]
+                      ? "border-red-400 focus:border-red-500"
+                      : "border-line focus:border-brand-accent"
+                  }`}
                 />
+                {invalid[f.key] && (
+                  <span id={`sandbox-error-${f.key}`} className="text-small text-red-600">
+                    {invalid[f.key][0]} Sending returns the API&apos;s 422.
+                  </span>
+                )}
               </label>
             ))}
             <button
@@ -510,11 +597,23 @@ export default function SandboxSection() {
             <button
               type="button"
               onClick={sendRequest}
-              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-btn bg-brand text-base font-medium text-offwhite shadow-glow transition-transform hover:-translate-y-px"
+              disabled={missing.length > 0}
+              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-btn bg-brand text-base font-medium text-offwhite shadow-glow transition-transform hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
             >
               <Play className="h-4 w-4" />
               Send request
             </button>
+
+            {missing.length > 0 && (
+              <p role="status" className="-mt-2 text-small text-body">
+                Fill in every field to send a request
+                <span className="text-body/70">
+                  {" — missing "}
+                  {missing.join(", ")}
+                </span>
+                .
+              </p>
+            )}
 
             <p className="flex items-start gap-2 rounded-card bg-subtle p-4 text-small text-body">
               <Zap className="mt-0.5 h-4 w-4 shrink-0 text-brand-accent" />
@@ -549,6 +648,16 @@ export default function SandboxSection() {
                   Response
                 </button>
               </div>
+
+              {tab === "response" && sent && (
+                <span
+                  className={`rounded-[6px] px-2 py-0.5 font-mono text-[12px] font-semibold ${
+                    rejected ? "bg-red-500/15 text-red-400" : "bg-success/15 text-success"
+                  }`}
+                >
+                  {rejected ? "422 Unprocessable" : "200 OK"}
+                </span>
+              )}
 
               <button
                 type="button"

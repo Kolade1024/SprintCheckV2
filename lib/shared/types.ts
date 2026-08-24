@@ -346,3 +346,51 @@ export interface ChangePasswordPayload {
 export interface LoginResponse extends MessageResponse {
   twoFactorRequired: boolean;
 }
+
+/* ------------------------------------------------------------------ support */
+
+/** Ticket category, from the public GET /support-topics list. */
+export interface SupportTopic {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+export type SupportTicketStatus = "open" | "in_progress" | "resolved" | "closed";
+
+export interface SupportTicket {
+  id: number;
+  fullname: string;
+  email: string;
+  company: string | null;
+  topic: SupportTopic | null;
+  message: string;
+  status: SupportTicketStatus;
+  /** Only present when upstream eager-counts replies; null on the detail view. */
+  repliesCount: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SupportTicketPage {
+  items: SupportTicket[];
+  meta: PageMeta;
+}
+
+export interface TicketReply {
+  id: number;
+  senderType: "admin" | "customer";
+  senderName: string;
+  senderEmail: string;
+  message: string;
+  createdAt: string;
+}
+
+/** Body for the public POST /support-tickets. */
+export interface SubmitTicketPayload {
+  fullname: string;
+  email: string;
+  company?: string;
+  topic_id: number;
+  message: string;
+}

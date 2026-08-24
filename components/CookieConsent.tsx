@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * Cookie consent banner. Shows on first visit, records the choice in
@@ -27,12 +27,15 @@ export default function CookieConsent() {
   // Render nothing until mounted so the server and first client render match,
   // then reveal only if no choice has been stored yet.
   const [visible, setVisible] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  /** Whatever had focus before the banner appeared, so we can hand it back. */
+  const restoreFocusTo = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (getCookieConsent() === null) setVisible(true);
   }, []);
 
-  function decide(choice: Consent) {
+  const decide = useCallback((choice: Consent) => {
     try {
       window.localStorage.setItem(
         STORAGE_KEY,
@@ -42,27 +45,58 @@ export default function CookieConsent() {
       // localStorage unavailable (private mode) — hide for this session anyway.
     }
     setVisible(false);
-  }
+    restoreFocusTo.current?.focus();
+  }, []);
+
+  // Escape resolves the banner as "essential only". Dismissing must never be
+  // read as consent, and a dismissal that recorded nothing would simply bring
+  // the banner back on the next page load.
+  useEffect(() => {
+    if (!visible) return;
+
+    restoreFocusTo.current = document.activeElement as HTMLElement | null;
+    // Move focus into the banner so keyboard and screen-reader users land on
+    // it rather than having to tab past the whole page to reach it.
+    cardRef.current?.focus();
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        decide("essential");
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [visible, decide]);
 
   if (!visible) return null;
 
   return (
     <div
       role="dialog"
-      aria-live="polite"
-      aria-label="Cookie consent"
+      // Non-modal on purpose: the banner must not trap focus or block the page
+      // behind it. `aria-live` is gone because moving focus here already
+      // announces it, and a live region on a focused dialog double-announces.
+      aria-modal="false"
+      aria-labelledby="cookie-consent-heading"
       // The wrapper spans a wide area but is only a positioning frame — let
       // clicks pass through it (so it never blocks footer links underneath);
       // only the visible card captures pointer events.
       className="pointer-events-none fixed inset-x-0 bottom-0 z-[80] p-4 md:bottom-5 md:left-5 md:right-auto md:w-[400px] md:p-0"
     >
-      <div className="pointer-events-auto animate-fade-up rounded-panel border border-line bg-white/95 p-5 shadow-glass backdrop-blur-md motion-reduce:animate-none">
+      <div
+        ref={cardRef}
+        tabIndex={-1}
+        className="pointer-events-auto animate-fade-up rounded-panel border border-line bg-white/95 p-5 shadow-glass outline-none backdrop-blur-md motion-reduce:animate-none"
+      >
         <div className="flex items-start gap-3">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-brand/10 text-brand-accent">
             <CookieGlyph className="h-[18px] w-[18px]" />
           </span>
           <div className="min-w-0">
-            <h2 className="text-small font-semibold text-ink">We use cookies</h2>
+            <h2 id="cookie-consent-heading" className="text-small font-semibold text-ink">
+              We use cookies
+            </h2>
             <p className="mt-1 text-[13px] leading-relaxed text-body">
               Essential cookies keep SprintCheck running. With your consent we
               also use analytics cookies to improve it — see our{" "}

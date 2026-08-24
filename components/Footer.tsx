@@ -2,7 +2,12 @@ import Image from "next/image";
 
 type FooterLink = { label: string; href: string };
 
-const link = (label: string, href = "#"): FooterLink => ({ label, href });
+/**
+ * `href` is deliberately required. It used to default to "#", which silently
+ * minted ten dead links across the footer — every destination now has to be
+ * named explicitly, so a missing one is a type error rather than a no-op link.
+ */
+const link = (label: string, href: string): FooterLink => ({ label, href });
 
 /** Off-site links (e.g. the status page) open in a new tab. */
 const externalProps = (href: string) =>
@@ -23,8 +28,16 @@ const COLUMNS = [
     ],
   },
   {
+    // No per-industry pages exist yet, so these point at the product line-up
+    // they'd each be built on. Repoint as the vertical pages land.
     heading: "Solutions",
-    links: [link("Banking"), link("Lending"), link("Crypto"), link("Insurance"), link("Gig economy")],
+    links: [
+      link("Banking", "/#products"),
+      link("Lending", "/#products"),
+      link("Crypto", "/#products"),
+      link("Insurance", "/#products"),
+      link("Gig economy", "/#products"),
+    ],
   },
   {
     heading: "Developers",
@@ -32,13 +45,21 @@ const COLUMNS = [
       link("Documentation", "/docs"),
       link("API Reference", "/docs"),
       link("Status", "https://stats.uptimerobot.com/x0HhHO47C5"),
-      link("Changelog"),
+      link("Changelog", "/docs"),
       link("SDKs", "/sdks"),
     ],
   },
   {
+    // No standalone company pages yet: "About" leans on the FAQ, and the
+    // enquiry-shaped links land on the contact form.
     heading: "Company",
-    links: [link("About"), link("Careers"), link("Press"), link("Partners"), link("Contact", "/contact")],
+    links: [
+      link("About", "/#faq"),
+      link("Careers", "/contact"),
+      link("Press", "/contact"),
+      link("Partners", "/contact"),
+      link("Contact", "/contact"),
+    ],
   },
 ];
 

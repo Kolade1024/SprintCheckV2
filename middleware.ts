@@ -23,6 +23,7 @@ export const config = {
     "/developers/:path*",
     "/pricing/:path*",
     "/audit-log/:path*",
+    "/support/:path*",
     "/profile/:path*",
   ],
 };

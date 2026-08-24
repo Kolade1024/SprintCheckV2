@@ -19,7 +19,12 @@ import type {
   PricingService,
   RegeneratedKeys,
   SignupPayload,
+  SubmitTicketPayload,
+  SupportTicket,
+  SupportTicketPage,
+  SupportTopic,
   TeamMember,
+  TicketReply,
   UpdateBusinessPayload,
   UpdateProfilePayload,
   VerificationLog,
@@ -134,8 +139,12 @@ export const appApi = {
   resendTwoFactorCode: () =>
     request<MessageResponse>("/account/two-factor/resend", { method: "POST" }),
 
-  disableTwoFactor: (code: string) =>
-    request<MessageResponse>("/account/two-factor/disable", { method: "POST", body: { code } }),
+  /** Omit `code` to have the OTP emailed (step 1); pass it to disable (step 2). */
+  disableTwoFactor: (code?: string) =>
+    request<MessageResponse>("/account/two-factor/disable", {
+      method: "POST",
+      body: code ? { code } : {},
+    }),
 
   uploadProfilePhoto: (file: File) => {
     const form = new FormData();
@@ -199,4 +208,35 @@ export const appApi = {
 
   cacTinSearch: (number: string) =>
     request<CacRecord>("/verification/tin", { method: "POST", body: { number } }),
+
+  /* ----------------------------------------------------------- support */
+
+  /** Public — no session needed, used by the marketing contact form. */
+  supportTopics: (signal?: AbortSignal) =>
+    request<{ topics: SupportTopic[] }>("/support/topics", { signal }),
+
+  /** Public — submits the contact form as a support ticket. */
+  submitSupportTicket: (payload: SubmitTicketPayload) =>
+    request<{ ticket: SupportTicket; message: string }>("/support/tickets", {
+      method: "POST",
+      body: payload,
+    }),
+
+  supportTickets: (page = 1, signal?: AbortSignal) =>
+    request<SupportTicketPage>(`/support/tickets?page=${page}`, { signal }),
+
+  supportTicket: (id: number | string, signal?: AbortSignal) =>
+    request<SupportTicket>(`/support/tickets/${encodeURIComponent(String(id))}`, { signal }),
+
+  supportTicketReplies: (id: number | string, signal?: AbortSignal) =>
+    request<{ replies: TicketReply[] }>(
+      `/support/tickets/${encodeURIComponent(String(id))}/replies`,
+      { signal },
+    ),
+
+  replyToSupportTicket: (id: number | string, message: string) =>
+    request<{ reply: TicketReply; message: string }>(
+      `/support/tickets/${encodeURIComponent(String(id))}/replies`,
+      { method: "POST", body: { message } },
+    ),
 };

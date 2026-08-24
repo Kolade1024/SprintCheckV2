@@ -36,7 +36,10 @@ export default function SignUpPage() {
     const businessName = data.get("name")?.toString().trim() ?? "";
     const email = data.get("email")?.toString().trim() ?? "";
     // The API expects 7–15 bare digits, so strip formatting from the input.
-    const phone = (data.get("phone")?.toString() ?? "").replace(/\D/g, "");
+    // Keep the raw value too: stripping turns "abcdefg!!!" into "", which would
+    // otherwise be reported as an empty field rather than a bad format.
+    const phoneRaw = data.get("phone")?.toString().trim() ?? "";
+    const phone = phoneRaw.replace(/\D/g, "");
     const password = data.get("password")?.toString() ?? "";
     const confirm = data.get("confirm")?.toString() ?? "";
     const accepted = data.get("terms") === "on";
@@ -46,7 +49,7 @@ export default function SignUpPage() {
     if (!businessName) next.name = "Enter your business name.";
     if (!email) next.email = "Enter your email address.";
     else if (!EMAIL_RE.test(email)) next.email = "Enter a valid email address.";
-    if (!phone) next.phone = "Enter your phone number.";
+    if (!phoneRaw) next.phone = "Enter your phone number.";
     else if (!/^[0-9]{7,15}$/.test(phone))
       next.phone = "Enter a valid phone number (7–15 digits).";
     if (!password) next.password = "Create a password.";

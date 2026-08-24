@@ -13,9 +13,13 @@ import type {
   PageMeta,
   PricingService,
   RegeneratedKeys,
+  SupportTicket,
+  SupportTicketStatus,
+  SupportTopic,
   TeamMember,
   TeamMemberStatus,
   TeamRole,
+  TicketReply,
   TwoFactorStatus,
   UserProfile,
   VerificationLog,
@@ -397,5 +401,42 @@ export function mapRegeneratedKeys(data: Raw): RegeneratedKeys {
     api_key: str(data.api_key),
     test_api_key: str(data.test_api_key),
     encryption_key: str(data.encryption_key),
+  };
+}
+
+/* ------------------------------------------------------------------ support */
+
+const TICKET_STATUSES: SupportTicketStatus[] = ["open", "in_progress", "resolved", "closed"];
+
+export function mapSupportTopic(raw: Raw): SupportTopic {
+  return { id: num(raw.id), name: str(raw.name), slug: str(raw.slug) };
+}
+
+export function mapSupportTicket(raw: Raw): SupportTicket {
+  const status = str(raw.status) as SupportTicketStatus;
+  const topic = raw.topic;
+  return {
+    id: num(raw.id),
+    fullname: str(raw.fullname),
+    email: str(raw.email),
+    company: raw.company == null ? null : str(raw.company),
+    topic: topic && typeof topic === "object" ? mapSupportTopic(topic as Raw) : null,
+    message: str(raw.message),
+    status: TICKET_STATUSES.includes(status) ? status : "open",
+    // Absent on the detail endpoint, so null rather than a misleading 0.
+    repliesCount: raw.replies_count == null ? null : num(raw.replies_count),
+    createdAt: str(pick(raw, ["created_at", "createdAt"])),
+    updatedAt: str(pick(raw, ["updated_at", "updatedAt"])),
+  };
+}
+
+export function mapTicketReply(raw: Raw): TicketReply {
+  return {
+    id: num(raw.id),
+    senderType: str(raw.sender_type) === "customer" ? "customer" : "admin",
+    senderName: str(raw.sender_name),
+    senderEmail: str(raw.sender_email),
+    message: str(raw.message),
+    createdAt: str(pick(raw, ["created_at", "createdAt"])),
   };
 }

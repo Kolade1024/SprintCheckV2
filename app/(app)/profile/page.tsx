@@ -336,7 +336,8 @@ function ProfileCard() {
 /**
  * Both directions of 2FA use the same shape: the server emails a 6-digit code
  * and we trade it for the state change. Enabling starts the code with
- * /two-factor/enable, disabling rotates one with /two-factor/resend.
+ * /two-factor/enable; disabling posts /two-factor/disable with no code, which
+ * emails one, then posts it back to the same endpoint to finish.
  */
 function TwoFactorModal({
   mode,
@@ -363,7 +364,7 @@ function TwoFactorModal({
     if (requested.current) return;
     requested.current = true;
 
-    const send = enabling ? appApi.enableTwoFactor() : appApi.resendTwoFactorCode();
+    const send = enabling ? appApi.enableTwoFactor() : appApi.disableTwoFactor();
     send
       .then((res) => setNotice({ kind: "success", message: res.message }))
       .catch((err: unknown) =>
@@ -379,7 +380,11 @@ function TwoFactorModal({
     setSending(true);
     setNotice(null);
     try {
-      const res = await appApi.resendTwoFactorCode();
+      // /two-factor/resend only rotates a code pending from the enable flow.
+      // A fresh disable OTP comes from re-running the disable step 1.
+      const res = enabling
+        ? await appApi.resendTwoFactorCode()
+        : await appApi.disableTwoFactor();
       setNotice({ kind: "success", message: res.message });
     } catch (err) {
       setNotice({
